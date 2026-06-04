@@ -297,21 +297,22 @@ let editId=null,dragId=null,selColor=ACOLORS[0];
 
 function save(){localStorage.setItem(SK,JSON.stringify(S))}
 async function load(){
-  // Try data.json first (GitHub Pages source of truth), fall back to localStorage
+  // Use localStorage first if it has data (preserves user edits across refreshes)
+  try{
+    const d=localStorage.getItem(SK);
+    if(d){S=JSON.parse(d);S.tasks=S.tasks||[];S.team=S.team||[];return}
+  }catch(e){}
+  // Seed from data.json on first visit only
   try{
     const res=await fetch('./data.json?_='+Date.now());
     if(res.ok){
       const d=await res.json();
       if(d.tasks&&d.team){
-        S=d;
-        localStorage.setItem(SK,JSON.stringify(S));
-        S.tasks=S.tasks||[];S.team=S.team||[];
-        return;
+        S=d;localStorage.setItem(SK,JSON.stringify(S));
+        S.tasks=S.tasks||[];S.team=S.team||[];return;
       }
     }
   }catch(e){}
-  // Fall back to localStorage
-  try{const d=localStorage.getItem(SK);if(d)S=JSON.parse(d)}catch(e){}
   S.tasks=S.tasks||[];S.team=S.team||[];
 }
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
