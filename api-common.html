@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dtech — API Reference: dtechcommonserver</title>
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --surface2: #f6f8fa;
+    --surface3: #eaeef2;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-muted: #57606a;
+    --accent-blue: #0969da;
+    --accent-green: #1a7f37;
+    --accent-orange: #9a6700;
+    --accent-purple: #8250df;
+    --accent-red: #cf222e;
+    --panel-w: 460px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+  }
+
+  /* ── NAV ── */
+  .topnav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topnav-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 18px; font-weight: 700; color: var(--accent-blue);
+    text-decoration: none;
+  }
+  .topnav-brand .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent-green); animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+  .topnav-links { display: flex; gap: 6px; }
+  .topnav-links a {
+    padding: 6px 14px; border-radius: 6px;
+    color: var(--text-muted); text-decoration: none;
+    font-size: 13px; transition: background .15s, color .15s;
+  }
+  .topnav-links a:hover, .topnav-links a.active { background: var(--surface2); color: var(--text); }
+
+  /* ── LAYOUT ── */
+  .layout { display: flex; height: calc(100vh - 53px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 230px; flex-shrink: 0;
+    background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; display: flex; flex-direction: column;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-search {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sidebar-search input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .sidebar-search input:focus { border-color: var(--accent-blue); }
+  .sidebar-search input::placeholder { color: var(--text-muted); }
+
+  .sidebar-groups { flex: 1; overflow-y: auto; padding: 8px 0; }
+
+  .sg { margin-bottom: 2px; }
+  .sg-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 14px; cursor: pointer;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text-muted);
+    user-select: none;
+    transition: color .12s;
+  }
+  .sg-header:hover { color: var(--text); }
+  .sg-header .sg-count {
+    font-size: 10px; font-weight: 600;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1px 6px; color: var(--text-muted);
+  }
+  .sg-header .sg-chevron { font-size: 10px; transition: transform .15s; }
+  .sg.collapsed .sg-chevron { transform: rotate(-90deg); }
+  .sg.collapsed .sg-items { display: none; }
+
+  .sg-items {}
+  .sg-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px 6px 20px;
+    cursor: pointer; font-size: 12px; color: var(--text-muted);
+    transition: background .1s, color .1s;
+    border-left: 2px solid transparent;
+  }
+  .sg-item:hover { background: var(--surface2); color: var(--text); }
+  .sg-item.active {
+    background: rgba(9,105,218,.06); color: var(--accent-blue);
+    border-left-color: var(--accent-blue); font-weight: 600;
+  }
+  .sg-item.hidden { display: none; }
+
+  /* ── MAIN CONTENT ── */
+  .content {
+    flex: 1; overflow-y: auto; padding: 24px 32px;
+    transition: margin-right .25s;
+  }
+  .content.panel-open { margin-right: var(--panel-w); }
+  .content::-webkit-scrollbar { width: 6px; }
+  .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .content-header { margin-bottom: 28px; }
+  .content-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .content-header p { color: var(--text-muted); font-size: 13px; }
+  .server-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 10px; padding: 6px 12px;
+    background: rgba(9,105,218,.08); border: 1px solid rgba(9,105,218,.2);
+    border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--accent-blue);
+  }
+  .server-badge .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent-green); animation: pulse 2s infinite;
+  }
+
+  /* ── GROUP SECTION ── */
+  .api-group {
+    margin-bottom: 40px;
+    scroll-margin-top: 24px;
+  }
+  .api-group.hidden { display: none; }
+
+  .api-group-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  .api-group-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .api-group-title { font-size: 16px; font-weight: 700; }
+  .api-group-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .api-group-base {
+    margin-left: auto; font-size: 11px; font-weight: 600;
+    font-family: 'SF Mono', monospace;
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 3px 8px; border-radius: 5px; color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── ENDPOINT ROW ── */
+  .endpoint-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .endpoint-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer;
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .endpoint-row:hover { border-color: var(--accent-blue); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .endpoint-row.active { border-color: var(--accent-blue); background: rgba(9,105,218,.03); box-shadow: 0 0 0 3px rgba(9,105,218,.08); }
+  .endpoint-row.hidden { display: none; }
+
+  .method {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 52px; padding: 3px 8px;
+    border-radius: 5px; font-size: 11px; font-weight: 700;
+    font-family: 'SF Mono', monospace; flex-shrink: 0;
+  }
+  .method-get    { background: rgba(26,127,55,.12);  color: #1a7f37; }
+  .method-post   { background: rgba(9,105,218,.12);  color: #0969da; }
+  .method-put    { background: rgba(154,103,0,.12);  color: #9a6700; }
+  .method-patch  { background: rgba(130,80,223,.12); color: #8250df; }
+  .method-delete { background: rgba(207,34,46,.12);  color: #cf222e; }
+
+  .ep-path {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px; color: var(--text); flex: 1;
+  }
+  .ep-path .ep-param { color: var(--accent-orange); }
+  .ep-desc { font-size: 12px; color: var(--text-muted); }
+  .ep-auth {
+    font-size: 10px; padding: 2px 6px;
+    border-radius: 4px; font-weight: 600;
+    flex-shrink: 0; white-space: nowrap;
+  }
+  .auth-admin  { background: rgba(9,105,218,.1);  color: var(--accent-blue);   border: 1px solid rgba(9,105,218,.2);  }
+  .auth-vendor { background: rgba(154,103,0,.1);  color: var(--accent-orange); border: 1px solid rgba(154,103,0,.2);  }
+  .auth-driver { background: rgba(130,80,223,.1); color: var(--accent-purple); border: 1px solid rgba(130,80,223,.2); }
+  .auth-none   { background: rgba(87,96,106,.1);  color: var(--text-muted);    border: 1px solid rgba(87,96,106,.2);  }
+  .auth-super  { background: rgba(207,34,46,.1);  color: var(--accent-red);    border: 1px solid rgba(207,34,46,.2);  }
+
+  .ep-click { font-size: 10px; color: var(--accent-blue); margin-left: 4px; flex-shrink: 0; }
+
+  /* ── SIDE PANEL ── */
+  .panel {
+    position: fixed; top: 53px; right: 0;
+    width: var(--panel-w); height: calc(100vh - 53px);
+    background: var(--surface); border-left: 1px solid var(--border);
+    z-index: 200;
+    transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+  }
+  .panel.open { transform: translateX(0); }
+
+  .panel-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2); flex-shrink: 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  }
+  .ph-left { display: flex; align-items: flex-start; gap: 10px; }
+  .ph-method { flex-shrink: 0; margin-top: 2px; }
+  .ph-path {
+    font-family: 'SF Mono', monospace; font-size: 14px; font-weight: 700;
+    word-break: break-all; margin-bottom: 3px;
+  }
+  .ph-desc { font-size: 12px; color: var(--text-muted); }
+  .panel-close {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-muted); width: 28px; height: 28px;
+    border-radius: 6px; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s; flex-shrink: 0;
+  }
+  .panel-close:hover { background: var(--surface3); color: var(--text); }
+
+  .panel-body { flex: 1; overflow-y: auto; padding: 0; }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .ps { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .ps:last-child { border-bottom: none; }
+  .ps-title {
+    font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;
+  }
+
+  .kv-list { display: flex; flex-direction: column; gap: 7px; }
+  .kv { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .kv-key { color: var(--text-muted); font-size: 12px; min-width: 80px; flex-shrink: 0; }
+  .kv-val { font-size: 12px; text-align: right; word-break: break-word; }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 2px 5px; border-radius: 4px; color: var(--accent-blue);
+  }
+  .code-block {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+    color: var(--text); line-height: 1.7; white-space: pre; overflow-x: auto;
+  }
+
+  .param-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .param-table th {
+    text-align: left; padding: 6px 8px;
+    background: var(--surface2); color: var(--text-muted);
+    font-weight: 600; font-size: 11px;
+    border-bottom: 1px solid var(--border);
+  }
+  .param-table td { padding: 7px 8px; border-bottom: 1px solid var(--surface2); vertical-align: top; }
+  .param-table tr:last-child td { border-bottom: none; }
+  .param-name { font-family: 'SF Mono', monospace; color: var(--text); font-weight: 600; }
+  .param-type { color: var(--accent-purple); font-family: monospace; font-size: 11px; }
+  .param-req { color: var(--accent-red); font-size: 10px; font-weight: 700; }
+  .param-opt { color: var(--text-muted); font-size: 10px; }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .content.panel-open { margin-right: 0; }
+    .panel { width: 100vw; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="topnav-brand">
+    <img src="logo.png" alt="D Tech Creative" style="height:32px;width:auto" />
+  </a>
+  <div class="topnav-links">
+    <a href="index.html">Architecture</a>
+    <a href="flows.html">Data Flows</a>
+    <a href="database.html">Database</a>
+    <a href="api-common.html" class="active">API (Common)</a>
+    <a href="api-mobile.html">API (Mobile)</a>
+    <a href="tracker.html" target="_blank">Tracker</a>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-search">
+      <input type="text" id="search-input" placeholder="Search endpoints…" oninput="filterEndpoints(this.value)">
+    </div>
+    <div class="sidebar-groups" id="sidebar-groups">
+      <!-- populated by JS -->
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content" id="content">
+
+    <div class="content-header">
+      <h1>dtechcommonserver — API Reference</h1>
+      <p>Admin, Vendor, Driver and Common APIs. Click any endpoint for request/response details.</p>
+      <div class="server-badge">
+        <span class="live-dot"></span>
+        http://&lt;host&gt;:3001
+        &nbsp;·&nbsp; Express 5 + TypeScript &nbsp;·&nbsp; JWT Auth
+      </div>
+    </div>
+
+    <div id="api-groups">
+      <!-- rendered by JS -->
+    </div>
+
+  </main>
+</div>
+
+<!-- SIDE PANEL -->
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <div class="ph-left">
+      <span class="ph-method" id="ph-method"></span>
+      <div>
+        <div class="ph-path" id="ph-path">/path</div>
+        <div class="ph-desc" id="ph-desc">Description</div>
+      </div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   API DATA
+════════════════════════════════════════════════ */
+const GROUPS = [
+  {
+    id: 'admin-auth',
+    icon: '🔐', color: 'rgba(9,105,218,.1)',
+    title: 'Admin Auth',
+    sub: 'Login, token refresh, logout',
+    base: '/admin/v1',
+    endpoints: [
+      {
+        method:'POST', path:'/login', auth:'none',
+        desc:'Admin login with email + password',
+        params:[
+          { name:'email',    type:'string',  req:true,  desc:'Admin email address' },
+          { name:'password', type:'string',  req:true,  desc:'Plain text password (bcrypt compared server-side)' }
+        ],
+        response:`{
+  token: string,          // JWT access token (24h)
+  // refreshToken: set as HTTP-only cookie (7d)
+}`,
+        notes:'Token payload: { adminId, role, email }. Roles: SuperAdmin | Admin. Middleware: AdminTokenAuthenticator.ts.'
+      },
+      {
+        method:'POST', path:'/refresh-token', auth:'cookie',
+        desc:'Exchange refresh cookie for new access token',
+        params:[], response:`{ token: string }`,
+        notes:'Refresh cookie is HTTP-only — sent automatically by the browser. Call this on 401 responses, then retry the original request.'
+      },
+      {
+        method:'POST', path:'/logout', auth:'admin',
+        desc:'Invalidate session — clears refresh cookie',
+        params:[], response:`{ message: "Logged out" }`,
+        notes:''
+      }
+    ]
+  },
+  {
+    id: 'admin-mgmt',
+    icon: '👤', color: 'rgba(9,105,218,.1)',
+    title: 'Admin Management',
+    sub: 'CRUD for admin users',
+    base: '/admin/v1/admins',
+    endpoints: [
+      { method:'GET',    path:'/',             auth:'admin', desc:'List all admin users', params:[], response:`{ admins: [{ adminId, email, role, created_at }] }`, notes:'' },
+      { method:'POST',   path:'/',             auth:'super', desc:'Create a new admin user',
+        params:[
+          { name:'email',    type:'string', req:true,  desc:'Admin email' },
+          { name:'password', type:'string', req:true,  desc:'Initial password' },
+          { name:'role',     type:'string', req:true,  desc:'Admin | SuperAdmin' }
+        ],
+        response:`{ adminId, email, role }`, notes:'SuperAdmin only.' },
+      { method:'GET',    path:'/:adminId',     auth:'admin', desc:'Get admin details', params:[], response:`{ adminId, email, role, created_at }`, notes:'' },
+      { method:'PUT',    path:'/:adminId',     auth:'admin', desc:'Update admin info (name, email)',
+        params:[{ name:'email', type:'string', req:false, desc:'New email' }],
+        response:`{ adminId, email }`, notes:'' },
+      { method:'DELETE', path:'/:adminId',     auth:'super', desc:'Delete admin account', params:[], response:`{ message: "Deleted" }`, notes:'SuperAdmin only.' },
+      { method:'PATCH',  path:'/:adminId/role',auth:'super', desc:'Change admin role',
+        params:[{ name:'role', type:'string', req:true, desc:'Admin | SuperAdmin' }],
+        response:`{ adminId, role }`, notes:'SuperAdmin only.' }
+    ]
+  },
+  {
+    id: 'vendor-mgmt',
+    icon: '🏪', color: 'rgba(154,103,0,.1)',
+    title: 'Vendor Management',
+    sub: 'Admin CRUD + document verification',
+    base: '/admin/v1/vendors',
+    endpoints: [
+      { method:'GET',   path:'/',                  auth:'admin', desc:'List vendors — supports city, status, search filters',
+        params:[
+          { name:'city',   type:'string', req:false, desc:'Filter by city' },
+          { name:'status', type:'string', req:false, desc:'active | inactive | unverified' },
+          { name:'search', type:'string', req:false, desc:'Search by name or phone' },
+          { name:'page',   type:'number', req:false, desc:'Pagination page' },
+          { name:'limit',  type:'number', req:false, desc:'Results per page' }
+        ],
+        response:`{ vendors: [...], total, page, limit }`, notes:'' },
+      { method:'GET',   path:'/:vendorId',          auth:'admin', desc:'Full vendor profile with document URLs',
+        params:[], response:`{ vendor_id, name, gstFile, tradeLicenseFile, isDocumentVerified, ... }`, notes:'' },
+      { method:'POST',  path:'/',                   auth:'admin', desc:'Create vendor manually',
+        params:[
+          { name:'name',       type:'string', req:true, desc:'Business name' },
+          { name:'phone',      type:'string', req:true, desc:'Phone number' },
+          { name:'password',   type:'string', req:true, desc:'Initial password' },
+          { name:'email',      type:'string', req:false, desc:'Email' },
+          { name:'warehouse_id', type:'number', req:false, desc:'Assign to warehouse' }
+        ],
+        response:`{ vendor_id }`, notes:'' },
+      { method:'PUT',   path:'/:vendorId',          auth:'admin', desc:'Update vendor details',
+        params:[{ name:'...fields', type:'mixed', req:false, desc:'Any vendor column' }],
+        response:`{ vendor_id }`, notes:'' },
+      { method:'DELETE',path:'/:vendorId',          auth:'super', desc:'Remove vendor permanently',
+        params:[], response:`{ message: "Deleted" }`, notes:'SuperAdmin only.' },
+      { method:'POST',  path:'/verify',             auth:'admin', desc:'Approve or reject vendor documents',
+        params:[
+          { name:'vendor_id',          type:'number',  req:true,  desc:'Target vendor' },
+          { name:'isDocumentVerified', type:'boolean', req:true,  desc:'true = approved, false = rejected' },
+          { name:'remarks',            type:'string',  req:false, desc:'Required on rejection' }
+        ],
+        response:`{ vendor_id, isDocumentVerified }`, notes:'' },
+      { method:'PATCH', path:'/:vendorId/status',   auth:'admin', desc:'Activate or deactivate vendor',
+        params:[{ name:'isActive', type:'boolean', req:true, desc:'true = active, false = suspended' }],
+        response:`{ vendor_id, isActive }`, notes:'' }
+    ]
+  },
+  {
+    id: 'driver-mgmt',
+    icon: '🚗', color: 'rgba(130,80,223,.1)',
+    title: 'Driver Management',
+    sub: 'Admin verification + performance tracking',
+    base: '/admin/v1/drivers',
+    endpoints: [
+      { method:'GET',  path:'/drivers',                     auth:'admin', desc:'List all drivers with filters',
+        params:[{ name:'status', type:'string', req:false, desc:'verified | unverified | active | suspended' }],
+        response:`{ drivers: [...], total }`, notes:'' },
+      { method:'GET',  path:'/drivers/:driverId',           auth:'admin', desc:'Driver profile + document URLs',
+        params:[], response:`{ driver_id, name, license_file_url, vehicle_reg_file_url, isDocumentVerified, ... }`, notes:'' },
+      { method:'PUT',  path:'/drivers/:driverId/verify',    auth:'admin', desc:'Approve driver documents',
+        params:[], response:`{ driver_id, isDocumentVerified: true }`, notes:'' },
+      { method:'PUT',  path:'/drivers/:driverId/reject',    auth:'admin', desc:'Reject driver with reason',
+        params:[{ name:'reason', type:'string', req:true, desc:'Rejection reason stored as remarks' }],
+        response:`{ driver_id, isDocumentVerified: false }`, notes:'' },
+      { method:'PUT',  path:'/drivers/:driverId/status',    auth:'admin', desc:'Set driver active or suspended',
+        params:[{ name:'status', type:'string', req:true, desc:'active | suspended' }],
+        response:`{ driver_id, status }`, notes:'' },
+      { method:'PUT',  path:'/drivers/:driverId/remarks',   auth:'admin', desc:'Add admin remarks to driver profile',
+        params:[{ name:'remarks', type:'string', req:true, desc:'Free-text admin notes' }],
+        response:`{ driver_id }`, notes:'' },
+      { method:'GET',  path:'/drivers/:driverId/analytics', auth:'admin', desc:'Driver delivery performance stats',
+        params:[], response:`{ total_deliveries, avg_rating, on_time_rate, earnings_total }`, notes:'' },
+      { method:'GET',  path:'/drivers/:driverId/payouts',   auth:'admin', desc:'Driver payout history',
+        params:[], response:`{ payouts: [{ amount, date, orders }] }`, notes:'' }
+    ]
+  },
+  {
+    id: 'vendor-orders',
+    icon: '📋', color: 'rgba(130,80,223,.1)',
+    title: 'Vendor Orders (Admin)',
+    sub: 'Incoming restock orders from vendors',
+    base: '/admin/v1/orders',
+    endpoints: [
+      { method:'GET',  path:'/incoming',          auth:'admin', desc:'All pending vendor orders',
+        params:[], response:`{ orders: [{ order_id, vendor, warehouse, products, order_status, created_at }] }`, notes:'' },
+      { method:'POST', path:'/approve',           auth:'admin', desc:'Approve a vendor order',
+        params:[{ name:'order_id', type:'number', req:true, desc:'Order to approve' }],
+        response:`{ order_id, order_status: "approved" }`, notes:'Inventory quantities updated on approval.' },
+      { method:'POST', path:'/reject',            auth:'admin', desc:'Reject a vendor order',
+        params:[
+          { name:'order_id', type:'number', req:true,  desc:'Order to reject' },
+          { name:'remarks',  type:'string', req:false, desc:'Rejection reason' }
+        ],
+        response:`{ order_id, order_status: "rejected" }`, notes:'' },
+      { method:'POST', path:'/newapprove',        auth:'admin', desc:'Approve order with pickup details',
+        params:[
+          { name:'order_id',         type:'number', req:true, desc:'Order to approve' },
+          { name:'pickup_date',      type:'string', req:true, desc:'ISO date string' },
+          { name:'pickup_time',      type:'string', req:true, desc:'Time string' },
+          { name:'pickup_location',  type:'string', req:true, desc:'Pickup address' }
+        ],
+        response:`{ order_id, order_status: "approved" }`, notes:'' },
+      { method:'GET',  path:'/:orderId/pickup',   auth:'admin', desc:'Get pickup details for an approved order',
+        params:[], response:`{ order_id, pickup_date, pickup_time, pickup_location }`, notes:'' }
+    ]
+  },
+  {
+    id: 'user-orders',
+    icon: '🧾', color: 'rgba(26,127,55,.1)',
+    title: 'Customer Orders (Admin)',
+    sub: 'View, pack, assign drivers to customer orders',
+    base: '/admin/v1/usersorders',
+    endpoints: [
+      { method:'GET',  path:'/users/orders',                   auth:'admin', desc:'All customer orders with filters',
+        params:[
+          { name:'status', type:'string', req:false, desc:'CREATED | CONFIRMED | DELIVERED | CANCELLED' },
+          { name:'page',   type:'number', req:false, desc:'Pagination' }
+        ],
+        response:`{ orders: [{ order_id, customer, total_amount, order_status, payment_status, created_at }] }`, notes:'' },
+      { method:'GET',  path:'/orders/:orderId',                auth:'admin', desc:'Customer order detail with items',
+        params:[], response:`{ order_id, customer, items: [...], shipping_address, driver, ... }`, notes:'' },
+      { method:'GET',  path:'/drivers/available',              auth:'admin', desc:'List online + verified drivers for assignment',
+        params:[], response:`{ drivers: [{ driver_id, name, phone, location, distance_km }] }`, notes:'Filtered by DELIVERY_DISTANCE_THRESHOLD_KM env var.' },
+      { method:'POST', path:'/orders/:orderId/assign-driver',  auth:'admin', desc:'Assign a driver to a customer order',
+        params:[{ name:'driver_id', type:'number', req:true, desc:'Driver to assign' }],
+        response:`{ order_id, driver_id }`, notes:'Fires Expo push notification to driver immediately.' },
+      { method:'POST', path:'/orders/:orderId/unassign-driver',auth:'admin', desc:'Remove driver assignment',
+        params:[], response:`{ order_id, driver_id: null }`, notes:'' },
+      { method:'PUT',  path:'/:order_id/pack',                 auth:'admin', desc:'Mark order as packed',
+        params:[], response:`{ order_id, product_status: "processing" }`, notes:'' },
+      { method:'PUT',  path:'/:order_id/ready',                auth:'admin', desc:'Mark order ready for pickup',
+        params:[], response:`{ order_id, product_status: "ready" }`, notes:'' }
+    ]
+  },
+  {
+    id: 'warehouse',
+    icon: '🏭', color: 'rgba(14,116,144,.1)',
+    title: 'Warehouse Management',
+    sub: 'Warehouses, analytics, activity feed',
+    base: '/admin/v1/warehouses',
+    endpoints: [
+      { method:'GET',  path:'/',                                    auth:'admin', desc:'List all warehouses',
+        params:[], response:`{ warehouses: [{ warehouse_id, name, city, status, ... }] }`, notes:'' },
+      { method:'POST', path:'/',                                    auth:'admin', desc:'Create warehouse',
+        params:[
+          { name:'name',         type:'string',  req:true,  desc:'Warehouse name' },
+          { name:'address_line1',type:'string',  req:true,  desc:'Street address' },
+          { name:'city',         type:'string',  req:true,  desc:'City' },
+          { name:'latitude',     type:'decimal', req:false, desc:'GPS latitude' },
+          { name:'longitude',    type:'decimal', req:false, desc:'GPS longitude' }
+        ],
+        response:`{ warehouse_id }`, notes:'' },
+      { method:'GET',  path:'/analytics/warehouse/overview',       auth:'admin', desc:'Warehouse-level analytics summary',
+        params:[], response:`{ warehouses: [{ warehouse_id, total_orders, total_stock, vendor_count }] }`, notes:'' },
+      { method:'GET',  path:'/warehouse/recent-activities',        auth:'admin', desc:'Recent activity feed across warehouses',
+        params:[], response:`{ activities: [{ type, description, warehouse, timestamp }] }`, notes:'' }
+    ]
+  },
+  {
+    id: 'inventory',
+    icon: '📊', color: 'rgba(14,116,144,.1)',
+    title: 'Inventory Management',
+    sub: 'Stock levels by product, vendor, warehouse',
+    base: '/admin/v1/inventory',
+    endpoints: [
+      { method:'GET',  path:'/products',               auth:'admin', desc:'All products with stock levels', params:[], response:`{ products: [{ product_id, name, total_quantity, vendor_count }] }`, notes:'' },
+      { method:'GET',  path:'/products/:productId',    auth:'admin', desc:'Stock detail for a product across all vendors/warehouses', params:[], response:`{ product, inventory_entries: [...] }`, notes:'' },
+      { method:'GET',  path:'/vendors',                auth:'admin', desc:'All vendors with inventory summary', params:[], response:`{ vendors: [{ vendor_id, name, total_sku, total_quantity }] }`, notes:'' },
+      { method:'GET',  path:'/vendors/:vendorId',      auth:'admin', desc:'Vendor inventory detail', params:[], response:`{ vendor, items: [...] }`, notes:'' },
+      { method:'GET',  path:'/warehouses',             auth:'admin', desc:'All warehouses with inventory', params:[], response:`{ warehouses: [...] }`, notes:'' },
+      { method:'GET',  path:'/warehouses/:warehouseId',auth:'admin', desc:'Warehouse inventory detail', params:[], response:`{ warehouse, items: [...] }`, notes:'' },
+      { method:'POST', path:'/add',                    auth:'admin', desc:'Add new inventory entry',
+        params:[
+          { name:'warehouse_id', type:'number',  req:true,  desc:'Target warehouse' },
+          { name:'product_id',   type:'number',  req:true,  desc:'Product' },
+          { name:'vendor_id',    type:'number',  req:true,  desc:'Vendor' },
+          { name:'quantity',     type:'number',  req:true,  desc:'Initial stock count' },
+          { name:'price',        type:'decimal', req:true,  desc:'Selling price' },
+          { name:'offer_price',  type:'decimal', req:false, desc:'Discounted price' }
+        ],
+        response:`{ inventory_id }`, notes:'' },
+      { method:'PUT',  path:'/items/:inventoryId',     auth:'admin', desc:'Edit inventory item (price, quantity)',
+        params:[
+          { name:'quantity',    type:'number',  req:false, desc:'New stock count' },
+          { name:'price',       type:'decimal', req:false, desc:'New price' },
+          { name:'offer_price', type:'decimal', req:false, desc:'New offer price' }
+        ],
+        response:`{ inventory_id }`, notes:'' },
+      { method:'GET',  path:'/products/list',          auth:'admin', desc:'Flat product list for dropdowns', params:[], response:`[{ product_id, name }]`, notes:'' },
+      { method:'GET',  path:'/vendors/list',           auth:'admin', desc:'Flat vendor list for dropdowns', params:[], response:`[{ vendor_id, name }]`, notes:'' },
+      { method:'GET',  path:'/warehouses/list',        auth:'admin', desc:'Flat warehouse list for dropdowns', params:[], response:`[{ warehouse_id, name }]`, notes:'' }
+    ]
+  },
+  {
+    id: 'products',
+    icon: '📦', color: 'rgba(9,105,218,.1)',
+    title: 'Product Management',
+    sub: 'Catalogue CRUD + categories',
+    base: '/admin/v1/products',
+    endpoints: [
+      { method:'GET',    path:'/',                        auth:'admin', desc:'List all products', params:[{ name:'category', type:'string', req:false, desc:'Filter by category' }, { name:'search', type:'string', req:false, desc:'Search by name/SKU' }], response:`{ products: [...], total }`, notes:'' },
+      { method:'GET',    path:'/:productId',              auth:'admin', desc:'Product detail', params:[], response:`{ product_id, name, price, offer_price, is_active, sku, ... }`, notes:'' },
+      { method:'POST',   path:'/',                        auth:'admin', desc:'Create product (multipart/form-data)',
+        params:[
+          { name:'name',        type:'string',  req:true,  desc:'Product name' },
+          { name:'price',       type:'decimal', req:true,  desc:'Base price' },
+          { name:'category',    type:'string',  req:true,  desc:'Category name' },
+          { name:'sku',         type:'string',  req:true,  desc:'Stock Keeping Unit' },
+          { name:'unit',        type:'string',  req:true,  desc:'kg / litre / piece' },
+          { name:'image',       type:'file',    req:false, desc:'Product image file' }
+        ],
+        response:`{ product_id }`, notes:'multipart/form-data for image upload.' },
+      { method:'PUT',    path:'/:productId',              auth:'admin', desc:'Update product details',
+        params:[{ name:'...fields', type:'mixed', req:false, desc:'Any product column' }],
+        response:`{ product_id }`, notes:'' },
+      { method:'PATCH',  path:'/:productId/status',       auth:'admin', desc:'Toggle product active/inactive',
+        params:[{ name:'is_active', type:'boolean', req:true, desc:'true = visible to customers' }],
+        response:`{ product_id, is_active }`, notes:'' },
+      { method:'DELETE', path:'/:productId',              auth:'admin', desc:'Delete product',
+        params:[], response:`{ message: "Deleted" }`, notes:'' },
+      { method:'DELETE', path:'/:productId/images',       auth:'admin', desc:'Remove product images',
+        params:[], response:`{ message: "Images removed" }`, notes:'' },
+      { method:'GET',    path:'/categories',              auth:'admin', desc:'All categories', params:[], response:`{ categories: [{ id, name }] }`, notes:'' },
+      { method:'GET',    path:'/categories/:id',          auth:'admin', desc:'Category detail', params:[], response:`{ id, name }`, notes:'' },
+      { method:'POST',   path:'/categories',              auth:'admin', desc:'Create category', params:[{ name:'name', type:'string', req:true, desc:'Category name' }], response:`{ id, name }`, notes:'' },
+      { method:'PUT',    path:'/categories/:id',          auth:'admin', desc:'Update category', params:[{ name:'name', type:'string', req:true, desc:'New name' }], response:`{ id, name }`, notes:'' },
+      { method:'DELETE', path:'/categories/:id',          auth:'admin', desc:'Delete category', params:[], response:`{ message: "Deleted" }`, notes:'' }
+    ]
+  },
+  {
+    id: 'customers',
+    icon: '👥', color: 'rgba(26,127,55,.1)',
+    title: 'Customer Management',
+    sub: 'Read-only customer profiles and order history',
+    base: '/admin/v1/users',
+    endpoints: [
+      { method:'GET', path:'/',                        auth:'admin', desc:'All customers', params:[{ name:'search', type:'string', req:false, desc:'Search by name/phone' }], response:`{ customers: [{ customer_id, name, phone, created_at }] }`, notes:'' },
+      { method:'GET', path:'/:customerId',             auth:'admin', desc:'Customer profile detail', params:[], response:`{ customer_id, name, phone, addresses: [...], order_count }`, notes:'' },
+      { method:'GET', path:'/:customerId/orders',      auth:'admin', desc:'Customer order history', params:[], response:`{ orders: [...] }`, notes:'' }
+    ]
+  },
+  {
+    id: 'tickets',
+    icon: '🎫', color: 'rgba(207,34,46,.1)',
+    title: 'Support Tickets',
+    sub: 'Vendor support tickets — triage and resolve',
+    base: '/admin/v1/tickets',
+    endpoints: [
+      { method:'GET',    path:'/',                         auth:'admin', desc:'All support tickets', params:[{ name:'status', type:'string', req:false, desc:'open | in_progress | resolved | closed' }], response:`{ tickets: [{ ticket_number, vendor, status, created_at }] }`, notes:'' },
+      { method:'GET',    path:'/stats',                    auth:'admin', desc:'Ticket statistics (open, resolved, avg resolution time)', params:[], response:`{ open, in_progress, resolved, closed, avg_resolution_hours }`, notes:'' },
+      { method:'GET',    path:'/:ticket_number',           auth:'admin', desc:'Specific ticket detail', params:[], response:`{ ticket_number, vendor, status, remarks, attachments: [...] }`, notes:'' },
+      { method:'PATCH',  path:'/:ticket_number',           auth:'admin', desc:'Update ticket status or remarks',
+        params:[
+          { name:'status',  type:'string', req:false, desc:'open | in_progress | resolved | closed' },
+          { name:'remarks', type:'string', req:false, desc:'Agent notes' }
+        ],
+        response:`{ ticket_number, status }`, notes:'' },
+      { method:'DELETE', path:'/:ticket_number',           auth:'admin', desc:'Delete ticket', params:[], response:`{ message: "Deleted" }`, notes:'' },
+      { method:'POST',   path:'/:ticket_number/attachments',auth:'admin', desc:'Add attachment to ticket', params:[{ name:'file', type:'file', req:true, desc:'Attachment file' }], response:`{ attachment_id, file_url }`, notes:'' },
+      { method:'GET',    path:'/:ticket_number/attachments',auth:'admin', desc:'Get ticket attachments', params:[], response:`{ attachments: [{ attachment_id, file_url }] }`, notes:'' }
+    ]
+  },
+  {
+    id: 'analytics',
+    icon: '📈', color: 'rgba(9,105,218,.1)',
+    title: 'Analytics',
+    sub: 'Dashboard metrics, revenue, growth charts',
+    base: '/admin/v1/analytics',
+    endpoints: [
+      { method:'GET', path:'/dashboard/overview',       auth:'admin', desc:'Key metrics: total orders, revenue, active vendors, drivers', params:[], response:`{ total_orders, total_revenue, active_vendors, active_drivers, new_customers }`, notes:'' },
+      { method:'GET', path:'/orders',                   auth:'admin', desc:'Order volume over time', params:[{ name:'period', type:'string', req:false, desc:'day | week | month' }], response:`{ labels: [...], data: [...] }`, notes:'' },
+      { method:'GET', path:'/revenue',                  auth:'admin', desc:'Revenue analytics with trend', params:[{ name:'period', type:'string', req:false, desc:'day | week | month' }], response:`{ total, trend_pct, data: [...] }`, notes:'' },
+      { method:'GET', path:'/products/performance',     auth:'admin', desc:'Top and bottom performing products', params:[], response:`{ top: [...], bottom: [...] }`, notes:'' },
+      { method:'GET', path:'/vendors/performance',      auth:'admin', desc:'Vendor rankings by order volume', params:[], response:`{ vendors: [{ vendor_id, name, order_count, revenue }] }`, notes:'' },
+      { method:'GET', path:'/categories/performance',   auth:'admin', desc:'Category-level sales stats', params:[], response:`{ categories: [{ name, order_count, revenue }] }`, notes:'' },
+      { method:'GET', path:'/inventory',                auth:'admin', desc:'Inventory health: low stock, expiring soon', params:[], response:`{ low_stock: [...], expiring: [...] }`, notes:'' },
+      { method:'GET', path:'/users/growth',             auth:'admin', desc:'Customer registration growth chart', params:[{ name:'period', type:'string', req:false, desc:'day | week | month' }], response:`{ labels: [...], data: [...] }`, notes:'' },
+      { method:'GET', path:'/geographic',               auth:'admin', desc:'Regional order distribution by city', params:[], response:`{ regions: [{ city, order_count, revenue }] }`, notes:'' }
+    ]
+  },
+  {
+    id: 'vendor-api',
+    icon: '🏪', color: 'rgba(154,103,0,.1)',
+    title: 'Vendor APIs',
+    sub: 'Vendor-facing routes — JWT required',
+    base: '/vendor/v1',
+    endpoints: [
+      { method:'GET',  path:'/dashboard',                     auth:'vendor', desc:'Vendor dashboard summary (orders, revenue, stock)', params:[], response:`{ pending_orders, total_revenue, low_stock_count }`, notes:'' },
+      { method:'GET',  path:'/service-requests',              auth:'vendor', desc:'My support service requests', params:[], response:`{ tickets: [...] }`, notes:'' },
+      { method:'GET',  path:'/order/listing',                 auth:'vendor', desc:'My restock orders', params:[{ name:'status', type:'string', req:false, desc:'pending | approved | rejected' }], response:`{ orders: [...] }`, notes:'' },
+      { method:'GET',  path:'/warehouses',                    auth:'vendor', desc:'Available warehouses', params:[], response:`{ warehouses: [...] }`, notes:'' },
+      { method:'GET',  path:'/low-product-alert',             auth:'vendor', desc:'Items below LOW_ALERT_THRESHOLD stock', params:[], response:`{ items: [{ product_id, name, quantity }] }`, notes:'Threshold set via LOW_ALERT_THRESHOLD env var (default: 10).' },
+      { method:'GET',  path:'/listing/product-categories',    auth:'vendor', desc:'Product categories for ordering', params:[], response:`{ categories: [...] }`, notes:'' },
+      { method:'GET',  path:'/inventory/products',            auth:'vendor', desc:'My current inventory', params:[], response:`{ products: [{ inventory_id, name, quantity, price }] }`, notes:'' },
+      { method:'GET',  path:'/sales/dashboard',               auth:'vendor', desc:'Sales metrics and trends', params:[], response:`{ total_sales, orders_this_month, top_products }`, notes:'' },
+      { method:'POST', path:'/register/sr',                   auth:'vendor', desc:'Raise a support request',
+        params:[{ name:'description', type:'string', req:true, desc:'Issue description' }, { name:'attachments', type:'file[]', req:false, desc:'Optional file attachments' }],
+        response:`{ ticket_number }`, notes:'' },
+      { method:'POST', path:'/create-product-order',          auth:'vendor', desc:'Create restock order to warehouse',
+        params:[
+          { name:'warehouse_id', type:'number',   req:true, desc:'Target warehouse' },
+          { name:'products',     type:'array',    req:true, desc:'[{ product_id, requested_quantity }]' }
+        ],
+        response:`{ order_id, order_status: "pending" }`, notes:'Snapshots product name, price, SKU at order time.' },
+      { method:'POST', path:'/order/cancel',                  auth:'vendor', desc:'Cancel a pending order', params:[{ name:'order_id', type:'number', req:true, desc:'Order to cancel' }], response:`{ order_id, order_status: "cancelled" }`, notes:'Can only cancel orders with status: pending.' },
+      { method:'PUT',  path:'/order/edit',                    auth:'vendor', desc:'Edit a pending order', params:[{ name:'order_id', type:'number', req:true, desc:'Order to edit' }, { name:'products', type:'array', req:true, desc:'Updated product list' }], response:`{ order_id }`, notes:'' },
+      { method:'POST', path:'/order/generate-manifest',       auth:'vendor', desc:'Generate PDF manifest for approved order',
+        params:[{ name:'order_id', type:'number', req:true, desc:'Approved order' }],
+        response:`// Binary PDF (application/pdf)`, notes:'Puppeteer renders HTML template to PDF. Returns Content-Disposition: attachment.' },
+      { method:'POST', path:'/update-profile',                auth:'vendor', desc:'Update vendor profile + resubmit documents',
+        params:[{ name:'...fields', type:'mixed', req:false, desc:'Any vendor field' }, { name:'gstFile', type:'file', req:false, desc:'GST certificate' }, { name:'tradeLicenseFile', type:'file', req:false, desc:'Trade licence' }],
+        response:`{ vendor_id }`, notes:'multipart/form-data.' },
+      { method:'PUT',  path:'/inventory/product/edit',        auth:'vendor', desc:'Edit an inventory product entry', params:[{ name:'inventory_id', type:'number', req:true, desc:'Entry to edit' }, { name:'price', type:'decimal', req:false, desc:'New price' }, { name:'quantity', type:'number', req:false, desc:'New quantity' }], response:`{ inventory_id }`, notes:'' }
+    ]
+  },
+  {
+    id: 'driver-api',
+    icon: '🚗', color: 'rgba(130,80,223,.1)',
+    title: 'Driver APIs',
+    sub: 'Driver-facing routes — JWT required',
+    base: '/driver/v1',
+    endpoints: [
+      { method:'GET',  path:'/dashboard',            auth:'driver', desc:'Driver dashboard summary', params:[], response:`{ assigned_orders, total_deliveries, earnings_today }`, notes:'' },
+      { method:'GET',  path:'/my-orders',            auth:'driver', desc:'Assigned orders list', params:[], response:`{ orders: [...] }`, notes:'' },
+      { method:'GET',  path:'/available',            auth:'driver', desc:'Available orders to accept', params:[], response:`{ orders: [...] }`, notes:'' },
+      { method:'GET',  path:'/earnings',             auth:'driver', desc:'Earnings summary', params:[], response:`{ today, this_week, this_month, total }`, notes:'' },
+      { method:'GET',  path:'/history',              auth:'driver', desc:'Delivery history', params:[], response:`{ deliveries: [...] }`, notes:'' },
+      { method:'GET',  path:'/tickets',              auth:'driver', desc:'My support tickets', params:[], response:`{ tickets: [...] }`, notes:'' },
+      { method:'GET',  path:'/:order_id',            auth:'driver', desc:'Order detail', params:[], response:`{ order_id, customer, items, shipping_address }`, notes:'' },
+      { method:'PUT',  path:'/profile',              auth:'driver', desc:'Update driver profile', params:[{ name:'...fields', type:'mixed', req:false, desc:'Any driver field' }], response:`{ driver_id }`, notes:'' },
+      { method:'PUT',  path:'/status',               auth:'driver', desc:'Toggle online/offline', params:[{ name:'status', type:'string', req:true, desc:'online | offline' }], response:`{ driver_id, status }`, notes:'' },
+      { method:'PUT',  path:'/location',             auth:'driver', desc:'Update GPS coordinates', params:[{ name:'latitude', type:'decimal', req:true, desc:'GPS lat' }, { name:'longitude', type:'decimal', req:true, desc:'GPS lng' }], response:`{ message: "Updated" }`, notes:'Called continuously while on delivery for live tracking.' },
+      { method:'POST', path:'/:order_id/accept',     auth:'driver', desc:'Accept assigned order', params:[], response:`{ order_id }`, notes:'Fires push notification to customer.' },
+      { method:'PUT',  path:'/:order_id/pickup',     auth:'driver', desc:'Mark order as picked up', params:[{ name:'pickup_time', type:'datetime', req:true, desc:'ISO timestamp' }], response:`{ order_id, product_status: "dispatched" }`, notes:'Fires push notification to customer.' },
+      { method:'PUT',  path:'/:order_id/deliver',    auth:'driver', desc:'Mark order as delivered', params:[{ name:'delivery_time', type:'datetime', req:true, desc:'ISO timestamp' }], response:`{ order_id, order_status: "DELIVERED" }`, notes:'Updates driver earnings and delivery count.' },
+      { method:'POST', path:'/:order_id/cancel',     auth:'driver', desc:'Cancel a delivery', params:[{ name:'reason', type:'string', req:true, desc:'Cancellation reason' }], response:`{ order_id, order_status: "CANCELLED" }`, notes:'' },
+      { method:'POST', path:'/:order_id/return',     auth:'driver', desc:'Initiate Return to Origin (RTO)', params:[{ name:'reason', type:'string', req:true, desc:'Return reason' }, { name:'return_time', type:'datetime', req:true, desc:'ISO timestamp' }], response:`{ order_id, order_status: "RETURNED" }`, notes:'' },
+      { method:'POST', path:'/tickets',              auth:'driver', desc:'Create support ticket', params:[{ name:'subject', type:'string', req:true, desc:'Ticket subject' }, { name:'description', type:'string', req:true, desc:'Issue details' }], response:`{ ticket_number }`, notes:'' },
+      { method:'POST', path:'/save-push-token',      auth:'driver', desc:'Register Expo push token', params:[{ name:'push_token', type:'string', req:true, desc:'ExponentPushToken[xxx]' }], response:`{ message: "Saved" }`, notes:'Required for order assignment notifications.' }
+    ]
+  },
+  {
+    id: 'common',
+    icon: '🔗', color: 'rgba(87,96,106,.1)',
+    title: 'Common Routes',
+    sub: 'Shared auth + profile routes for vendors and drivers',
+    base: '/common/v1',
+    endpoints: [
+      { method:'POST', path:'/send-otp',              auth:'none', desc:'Send OTP to vendor or driver phone',
+        params:[{ name:'phone', type:'string', req:true, desc:'Mobile number to receive OTP' }],
+        response:`{ message: "OTP sent" }`, notes:'' },
+      { method:'POST', path:'/validateLogin',         auth:'none', desc:'Validate OTP and issue JWT',
+        params:[
+          { name:'phone',    type:'string', req:true, desc:'Phone or email' },
+          { name:'otp',      type:'string', req:true, desc:'OTP or password' },
+          { name:'userType', type:'string', req:true, desc:'vendor | driver' }
+        ],
+        response:`{ token: string }`, notes:'Routes to correct handler by userType. Vendor middleware: TokenAuthentication.ts. Driver middleware: DriverTokenAuthenticator.ts.' },
+      { method:'POST', path:'/vendor/update-profile', auth:'none', desc:'Vendor registration / profile update with document upload',
+        params:[{ name:'...fields', type:'mixed', req:false, desc:'Vendor profile fields + gstFile + tradeLicenseFile' }],
+        response:`{ vendor_id }`, notes:'multipart/form-data. Pre-verification — no auth required.' },
+      { method:'POST', path:'/driver/update-profile', auth:'none', desc:'Driver registration / profile update with document upload',
+        params:[{ name:'...fields', type:'mixed', req:false, desc:'Driver fields + license_file + vehicle_reg_file + profile_photo' }],
+        response:`{ driver_id }`, notes:'multipart/form-data. Pre-verification — no auth required.' },
+      { method:'POST', path:'/save-fcmtoken',         auth:'none', desc:'Save FCM/push token for vendor or driver',
+        params:[{ name:'push_token', type:'string', req:true, desc:'FCM or Expo push token' }, { name:'userType', type:'string', req:true, desc:'vendor | driver' }],
+        response:`{ message: "Saved" }`, notes:'' }
+    ]
+  }
+];
+
+/* ════════════════════════════════════════════════
+   RENDER
+════════════════════════════════════════════════ */
+function renderAll() {
+  const sidebar = document.getElementById('sidebar-groups');
+  const main    = document.getElementById('api-groups');
+  let sHTML = '', mHTML = '';
+
+  GROUPS.forEach(g => {
+    // sidebar
+    const itemsHTML = g.endpoints.map((ep, i) =>
+      `<div class="sg-item" id="si-${g.id}-${i}"
+            onclick="selectEndpoint('${g.id}',${i})"
+            data-search="${ep.method} ${ep.path} ${ep.desc}">
+        <span class="method method-${ep.method.toLowerCase()}" style="font-size:9px;padding:1px 4px">${ep.method}</span>
+        <span style="font-size:11px;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ep.path}</span>
+      </div>`
+    ).join('');
+
+    sHTML += `
+      <div class="sg" id="sg-${g.id}">
+        <div class="sg-header" onclick="toggleGroup('${g.id}')">
+          <span>${g.title}</span>
+          <span style="display:flex;align-items:center;gap:6px">
+            <span class="sg-count">${g.endpoints.length}</span>
+            <span class="sg-chevron">▾</span>
+          </span>
+        </div>
+        <div class="sg-items">${itemsHTML}</div>
+      </div>`;
+
+    // main content
+    const epsHTML = g.endpoints.map((ep, i) => {
+      const authClass = { 'admin':'auth-admin','vendor':'auth-vendor','driver':'auth-driver','none':'auth-none','super':'auth-super','cookie':'auth-none' }[ep.auth] || 'auth-none';
+      const authLabel = { 'admin':'Admin JWT','vendor':'Vendor JWT','driver':'Driver JWT','none':'No Auth','super':'SuperAdmin','cookie':'Cookie' }[ep.auth] || ep.auth;
+      const pathHtml = ep.path.replace(/:([a-zA-Z_]+)/g, '<span class="ep-param">:$1</span>');
+      return `<div class="endpoint-row" id="ep-${g.id}-${i}"
+                   data-group="${g.id}" data-idx="${i}"
+                   data-search="${ep.method} ${g.base}${ep.path} ${ep.desc}"
+                   onclick="selectEndpoint('${g.id}',${i})">
+        <span class="method method-${ep.method.toLowerCase()}">${ep.method}</span>
+        <span class="ep-path"><span style="color:var(--text-muted)">${g.base}</span>${pathHtml}</span>
+        <span class="ep-desc">${ep.desc}</span>
+        <span class="ep-auth ${authClass}">${authLabel}</span>
+        <span class="ep-click">→</span>
+      </div>`;
+    }).join('');
+
+    mHTML += `
+      <div class="api-group" id="ag-${g.id}">
+        <div class="api-group-header">
+          <div class="api-group-icon" style="background:${g.color}">${g.icon}</div>
+          <div>
+            <div class="api-group-title">${g.title}</div>
+            <div class="api-group-sub">${g.sub}</div>
+          </div>
+          <div class="api-group-base">${g.base}</div>
+        </div>
+        <div class="endpoint-list">${epsHTML}</div>
+      </div>`;
+  });
+
+  sidebar.innerHTML = sHTML;
+  main.innerHTML    = mHTML;
+}
+
+/* ════════════════════════════════════════════════
+   INTERACTIONS
+════════════════════════════════════════════════ */
+function toggleGroup(id) {
+  document.getElementById('sg-' + id).classList.toggle('collapsed');
+}
+
+let activeGroup = null, activeIdx = null;
+
+function selectEndpoint(groupId, idx) {
+  const group = GROUPS.find(g => g.id === groupId);
+  if (!group) return;
+  const ep = group.endpoints[idx];
+  if (!ep) return;
+
+  // highlight
+  document.querySelectorAll('.endpoint-row, .sg-item').forEach(el => el.classList.remove('active'));
+  const row  = document.getElementById('ep-' + groupId + '-' + idx);
+  const srow = document.getElementById('si-' + groupId + '-' + idx);
+  if (row)  row.classList.add('active');
+  if (srow) srow.classList.add('active');
+
+  activeGroup = groupId; activeIdx = idx;
+
+  // panel header
+  const authLabel = { 'admin':'Admin JWT','vendor':'Vendor JWT','driver':'Driver JWT','none':'No Auth','super':'SuperAdmin JWT','cookie':'Refresh Cookie' }[ep.auth] || ep.auth;
+  const authClass = { 'admin':'auth-admin','vendor':'auth-vendor','driver':'auth-driver','none':'auth-none','super':'auth-super','cookie':'auth-none' }[ep.auth] || 'auth-none';
+
+  document.getElementById('ph-method').innerHTML = `<span class="method method-${ep.method.toLowerCase()}">${ep.method}</span>`;
+  document.getElementById('ph-path').innerHTML   = `<span style="color:var(--text-muted)">${group.base}</span>${ep.path.replace(/:([a-zA-Z_]+)/g,'<span style="color:var(--accent-orange)">:$1</span>')}`;
+  document.getElementById('ph-desc').textContent = ep.desc;
+
+  // panel body
+  let html = `
+    <div class="ps">
+      <div class="ps-title">Endpoint</div>
+      <div class="kv-list">
+        <div class="kv"><span class="kv-key">Method</span><span class="kv-val"><span class="method method-${ep.method.toLowerCase()}">${ep.method}</span></span></div>
+        <div class="kv"><span class="kv-key">Full path</span><span class="kv-val"><code>${group.base}${ep.path}</code></span></div>
+        <div class="kv"><span class="kv-key">Auth</span><span class="kv-val"><span class="ep-auth ${authClass}">${authLabel}</span></span></div>
+        <div class="kv"><span class="kv-key">Server</span><span class="kv-val">dtechcommonserver · Port 3001</span></div>
+      </div>
+    </div>`;
+
+  if (ep.params && ep.params.length) {
+    html += `<div class="ps"><div class="ps-title">Parameters</div>
+      <table class="param-table">
+        <tr><th>Name</th><th>Type</th><th>Req</th><th>Description</th></tr>
+        ${ep.params.map(p => `<tr>
+          <td class="param-name">${p.name}</td>
+          <td class="param-type">${p.type}</td>
+          <td>${p.req ? '<span class="param-req">●</span>' : '<span class="param-opt">○</span>'}</td>
+          <td style="color:var(--text-muted);font-size:12px">${p.desc}</td>
+        </tr>`).join('')}
+      </table>
+    </div>`;
+  }
+
+  if (ep.response) {
+    html += `<div class="ps"><div class="ps-title">Response</div>
+      <div class="code-block">${escHtml(ep.response)}</div>
+    </div>`;
+  }
+
+  if (ep.notes) {
+    html += `<div class="ps"><div class="ps-title">Notes</div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6">${ep.notes}</div>
+    </div>`;
+  }
+
+  document.getElementById('panel-body').innerHTML = html;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('content').classList.add('panel-open');
+  if (row) row.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('content').classList.remove('panel-open');
+  document.querySelectorAll('.endpoint-row, .sg-item').forEach(el => el.classList.remove('active'));
+  activeGroup = null; activeIdx = null;
+}
+
+/* search */
+function filterEndpoints(q) {
+  const term = q.toLowerCase().trim();
+  let anyVisible = {};
+  GROUPS.forEach(g => { anyVisible[g.id] = false; });
+
+  document.querySelectorAll('.endpoint-row').forEach(el => {
+    const s = el.getAttribute('data-search').toLowerCase();
+    const show = !term || s.includes(term);
+    el.classList.toggle('hidden', !show);
+    if (show) anyVisible[el.getAttribute('data-group')] = true;
+  });
+
+  document.querySelectorAll('.sg-item').forEach(el => {
+    const s = el.getAttribute('data-search').toLowerCase();
+    el.classList.toggle('hidden', term && !s.includes(term));
+  });
+
+  GROUPS.forEach(g => {
+    const ag = document.getElementById('ag-' + g.id);
+    const sg = document.getElementById('sg-' + g.id);
+    if (ag) ag.classList.toggle('hidden', term && !anyVisible[g.id]);
+    if (sg) sg.classList.toggle('hidden', term && !anyVisible[g.id]);
+    if (term && anyVisible[g.id]) sg.classList.remove('collapsed');
+  });
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+
+renderAll();
+</script>
+</body>
+</html>

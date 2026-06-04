@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dtech — API Reference: dtechmobileapp</title>
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --surface2: #f6f8fa;
+    --surface3: #eaeef2;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-muted: #57606a;
+    --accent-blue: #0969da;
+    --accent-green: #1a7f37;
+    --accent-orange: #9a6700;
+    --accent-purple: #8250df;
+    --accent-red: #cf222e;
+    --accent-cyan: #0550ae;
+    --panel-w: 460px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+  }
+
+  /* ── NAV ── */
+  .topnav {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .topnav-brand {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 18px; font-weight: 700; color: var(--accent-blue);
+    text-decoration: none;
+  }
+  .topnav-brand .dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: var(--accent-green); animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+  .topnav-links { display: flex; gap: 6px; }
+  .topnav-links a {
+    padding: 6px 14px; border-radius: 6px;
+    color: var(--text-muted); text-decoration: none;
+    font-size: 13px; transition: background .15s, color .15s;
+  }
+  .topnav-links a:hover, .topnav-links a.active { background: var(--surface2); color: var(--text); }
+
+  /* ── LAYOUT ── */
+  .layout { display: flex; height: calc(100vh - 53px); }
+
+  /* ── SIDEBAR ── */
+  .sidebar {
+    width: 230px; flex-shrink: 0;
+    background: var(--surface); border-right: 1px solid var(--border);
+    overflow-y: auto; display: flex; flex-direction: column;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-search {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .sidebar-search input {
+    width: 100%;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: var(--surface2);
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+    transition: border-color .15s;
+  }
+  .sidebar-search input:focus { border-color: var(--accent-blue); }
+  .sidebar-search input::placeholder { color: var(--text-muted); }
+
+  .sidebar-groups { flex: 1; overflow-y: auto; padding: 8px 0; }
+
+  .sg { margin-bottom: 2px; }
+  .sg-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 14px; cursor: pointer;
+    font-size: 11px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: var(--text-muted);
+    user-select: none;
+    transition: color .12s;
+  }
+  .sg-header:hover { color: var(--text); }
+  .sg-header .sg-left { display: flex; align-items: center; gap: 6px; }
+  .sg-header .sg-count {
+    font-size: 10px; font-weight: 600;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 1px 6px; color: var(--text-muted);
+  }
+  .sg-header .sg-chevron { font-size: 10px; transition: transform .15s; }
+  .sg.collapsed .sg-chevron { transform: rotate(-90deg); }
+  .sg.collapsed .sg-items { display: none; }
+
+  .sg-item {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 14px 6px 20px;
+    cursor: pointer; font-size: 12px; color: var(--text-muted);
+    transition: background .1s, color .1s;
+    border-left: 2px solid transparent;
+  }
+  .sg-item:hover { background: var(--surface2); color: var(--text); }
+  .sg-item.active {
+    background: rgba(9,105,218,.06); color: var(--accent-blue);
+    border-left-color: var(--accent-blue); font-weight: 600;
+  }
+  .sg-item.hidden { display: none; }
+
+  /* ── MAIN CONTENT ── */
+  .content {
+    flex: 1; overflow-y: auto; padding: 24px 32px;
+    transition: margin-right .25s;
+  }
+  .content.panel-open { margin-right: var(--panel-w); }
+  .content::-webkit-scrollbar { width: 6px; }
+  .content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .content-header { margin-bottom: 28px; }
+  .content-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .content-header p { color: var(--text-muted); font-size: 13px; }
+  .server-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-top: 10px; padding: 6px 12px;
+    background: rgba(26,127,55,.08); border: 1px solid rgba(26,127,55,.2);
+    border-radius: 8px; font-size: 12px; font-weight: 600; color: var(--accent-green);
+  }
+  .server-badge .live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent-green); animation: pulse 2s infinite;
+  }
+
+  /* ── GROUP SECTION ── */
+  .api-group {
+    margin-bottom: 40px;
+    scroll-margin-top: 24px;
+  }
+  .api-group.hidden { display: none; }
+
+  .api-group-header {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px; padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+  }
+  .api-group-icon {
+    width: 34px; height: 34px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; flex-shrink: 0;
+  }
+  .api-group-title { font-size: 16px; font-weight: 700; }
+  .api-group-sub { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+  .api-group-base {
+    margin-left: auto; font-size: 11px; font-weight: 600;
+    font-family: 'SF Mono', monospace;
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 3px 8px; border-radius: 5px; color: var(--text-muted);
+    white-space: nowrap;
+  }
+
+  /* ── ENDPOINT ROW ── */
+  .endpoint-list { display: flex; flex-direction: column; gap: 6px; }
+
+  .endpoint-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; cursor: pointer;
+    transition: border-color .12s, box-shadow .12s;
+  }
+  .endpoint-row:hover { border-color: var(--accent-blue); box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+  .endpoint-row.active { border-color: var(--accent-blue); background: rgba(9,105,218,.03); box-shadow: 0 0 0 3px rgba(9,105,218,.08); }
+  .endpoint-row.hidden { display: none; }
+
+  .method {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 52px; padding: 3px 8px;
+    border-radius: 5px; font-size: 11px; font-weight: 700;
+    font-family: 'SF Mono', monospace; flex-shrink: 0;
+  }
+  .method-get    { background: rgba(26,127,55,.12);  color: #1a7f37; }
+  .method-post   { background: rgba(9,105,218,.12);  color: #0969da; }
+  .method-put    { background: rgba(154,103,0,.12);  color: #9a6700; }
+  .method-patch  { background: rgba(130,80,223,.12); color: #8250df; }
+  .method-delete { background: rgba(207,34,46,.12);  color: #cf222e; }
+
+  .ep-path {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 12px; color: var(--text); flex: 1;
+  }
+  .ep-path .ep-param { color: var(--accent-orange); }
+  .ep-desc { font-size: 12px; color: var(--text-muted); }
+  .ep-auth {
+    font-size: 10px; padding: 2px 6px;
+    border-radius: 4px; font-weight: 600;
+    flex-shrink: 0; white-space: nowrap;
+  }
+  .auth-customer { background: rgba(26,127,55,.1);   color: var(--accent-green);  border: 1px solid rgba(26,127,55,.2);  }
+  .auth-none     { background: rgba(87,96,106,.1);   color: var(--text-muted);    border: 1px solid rgba(87,96,106,.2);  }
+  .auth-webhook  { background: rgba(130,80,223,.1);  color: var(--accent-purple); border: 1px solid rgba(130,80,223,.2); }
+  .auth-razorpay { background: rgba(5,80,174,.1);    color: var(--accent-cyan);   border: 1px solid rgba(5,80,174,.2);  }
+
+  .ep-click { font-size: 10px; color: var(--accent-blue); margin-left: 4px; flex-shrink: 0; }
+
+  /* ── SIDE PANEL ── */
+  .panel {
+    position: fixed; top: 53px; right: 0;
+    width: var(--panel-w); height: calc(100vh - 53px);
+    background: var(--surface); border-left: 1px solid var(--border);
+    z-index: 200;
+    transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    display: flex; flex-direction: column;
+  }
+  .panel.open { transform: translateX(0); }
+
+  .panel-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2); flex-shrink: 0;
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  }
+  .ph-left { display: flex; align-items: flex-start; gap: 10px; }
+  .ph-method { flex-shrink: 0; margin-top: 2px; }
+  .ph-path {
+    font-family: 'SF Mono', monospace; font-size: 14px; font-weight: 700;
+    word-break: break-all; margin-bottom: 3px;
+  }
+  .ph-desc { font-size: 12px; color: var(--text-muted); }
+  .panel-close {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-muted); width: 28px; height: 28px;
+    border-radius: 6px; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s; flex-shrink: 0;
+  }
+  .panel-close:hover { background: var(--surface3); color: var(--text); }
+
+  .panel-body { flex: 1; overflow-y: auto; padding: 0; }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .ps { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .ps:last-child { border-bottom: none; }
+  .ps-title {
+    font-size: 10px; font-weight: 700; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--text-muted); margin-bottom: 10px;
+  }
+
+  .kv-list { display: flex; flex-direction: column; gap: 7px; }
+  .kv { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .kv-key { color: var(--text-muted); font-size: 12px; min-width: 80px; flex-shrink: 0; }
+  .kv-val { font-size: 12px; text-align: right; word-break: break-word; }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+    background: var(--surface2); border: 1px solid var(--border);
+    padding: 2px 5px; border-radius: 4px; color: var(--accent-blue);
+  }
+  .code-block {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 12px;
+    font-family: 'SF Mono', 'Fira Code', monospace; font-size: 11px;
+    color: var(--text); line-height: 1.7; white-space: pre; overflow-x: auto;
+  }
+
+  .param-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .param-table th {
+    text-align: left; padding: 6px 8px;
+    background: var(--surface2); color: var(--text-muted);
+    font-weight: 600; font-size: 11px;
+    border-bottom: 1px solid var(--border);
+  }
+  .param-table td { padding: 7px 8px; border-bottom: 1px solid var(--surface2); vertical-align: top; }
+  .param-table tr:last-child td { border-bottom: none; }
+  .param-name { font-family: 'SF Mono', monospace; color: var(--text); font-weight: 600; }
+  .param-type { color: var(--accent-purple); font-family: monospace; font-size: 11px; }
+  .param-req { color: var(--accent-red); font-size: 10px; font-weight: 700; }
+  .param-opt { color: var(--text-muted); font-size: 10px; }
+
+  .info-banner {
+    background: rgba(26,127,55,.06); border: 1px solid rgba(26,127,55,.15);
+    border-radius: 8px; padding: 10px 14px; margin-bottom: 24px;
+    font-size: 12px; color: var(--text-muted); line-height: 1.6;
+  }
+  .info-banner strong { color: var(--text); }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .content.panel-open { margin-right: 0; }
+    .panel { width: 100vw; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="topnav-brand">
+    <img src="logo.png" alt="D Tech Creative" style="height:32px;width:auto" />
+  </a>
+  <div class="topnav-links">
+    <a href="index.html">Architecture</a>
+    <a href="flows.html">Data Flows</a>
+    <a href="database.html">Database</a>
+    <a href="api-common.html">API (Common)</a>
+    <a href="api-mobile.html" class="active">API (Mobile)</a>
+    <a href="tracker.html" target="_blank">Tracker</a>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-search">
+      <input type="text" id="search-input" placeholder="Search endpoints…" oninput="filterEndpoints(this.value)">
+    </div>
+    <div class="sidebar-groups" id="sidebar-groups">
+      <!-- populated by JS -->
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="content" id="content">
+
+    <div class="content-header">
+      <h1>dtechmobileapp — API Reference</h1>
+      <p>Customer Auth, Profile, Products, Cart, Orders, Addresses, Exchanges, Notifications and Payments. Click any endpoint for details.</p>
+      <div class="server-badge">
+        <span class="live-dot"></span>
+        http://&lt;host&gt;:3000
+        &nbsp;·&nbsp; Express 5 + TypeScript &nbsp;·&nbsp; JWT + Razorpay
+      </div>
+    </div>
+
+    <div class="info-banner">
+      <strong>Auth:</strong> All <code>Bearer</code> routes require <code>Authorization: Bearer &lt;token&gt;</code>. Tokens are issued by <code>POST /customer/auth/v1/validateLogin</code> and stored in AsyncStorage on the mobile app. Token payload: <code>{ customerId, phone }</code>.
+    </div>
+
+    <div id="api-groups">
+      <!-- rendered by JS -->
+    </div>
+
+  </main>
+</div>
+
+<!-- SIDE PANEL -->
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <div class="ph-left">
+      <span class="ph-method" id="ph-method"></span>
+      <div>
+        <div class="ph-path" id="ph-path">/path</div>
+        <div class="ph-desc" id="ph-desc">Description</div>
+      </div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════
+   API DATA — dtechmobileapp (Port 3000)
+════════════════════════════════════════════════ */
+const GROUPS = [
+  /* ─── 1. CUSTOMER AUTH ─── */
+  {
+    id: 'customer-auth',
+    icon: '🔑', color: 'rgba(26,127,55,.1)',
+    title: 'Customer Auth',
+    sub: 'OTP-based phone authentication',
+    base: '/customer/auth/v1',
+    endpoints: [
+      {
+        method: 'POST', path: '/send-otp', auth: 'none',
+        desc: 'Send OTP to customer phone number',
+        params: [
+          { name: 'phone', type: 'string', req: true, desc: 'Customer phone number (10-digit)' }
+        ],
+        response: `{ message: "OTP sent successfully" }`,
+        notes: 'OTP is generated server-side and stored in Redis with a TTL (typically 5 minutes). Rate-limited via express-rate-limit + rate-limit-redis. The actual OTP is sent via SMS (external provider).'
+      },
+      {
+        method: 'POST', path: '/validateLogin', auth: 'none',
+        desc: 'Verify OTP and issue JWT tokens',
+        params: [
+          { name: 'phone', type: 'string', req: true,  desc: 'Phone number used in send-otp' },
+          { name: 'otp',   type: 'string', req: true,  desc: '6-digit OTP received via SMS' }
+        ],
+        response: `{
+  token: string,         // JWT access token (24h)
+  refreshToken: string,  // Refresh token (7d)
+  customer: {
+    customerId: number,
+    phone: string,
+    name: string | null
+  }
+}`,
+        notes: 'Creates a new customer record if the phone number is not yet registered. Token payload: { customerId, phone }. Tokens are stored in AsyncStorage on the React Native app. Middleware: TokenAuthenticator.ts.'
+      }
+    ]
+  },
+
+  /* ─── 2. CUSTOMER PROFILE ─── */
+  {
+    id: 'customer-profile',
+    icon: '👤', color: 'rgba(26,127,55,.1)',
+    title: 'Customer Profile',
+    sub: 'View and update profile details',
+    base: '/customer/v1',
+    endpoints: [
+      {
+        method: 'GET', path: '/profile', auth: 'customer',
+        desc: 'Get current customer profile',
+        params: [],
+        response: `{
+  customerId: number,
+  name: string,
+  phone: string,
+  email: string | null,
+  profile_image: string | null,
+  created_at: string
+}`,
+        notes: 'Customer identity is derived from the JWT token — no path param required.'
+      },
+      {
+        method: 'POST', path: '/update-profile', auth: 'customer',
+        desc: 'Update profile details (multipart/form-data)',
+        params: [
+          { name: 'name',          type: 'string', req: false, desc: 'Display name' },
+          { name: 'email',         type: 'string', req: false, desc: 'Email address' },
+          { name: 'profile_image', type: 'file',   req: false, desc: 'Profile photo (JPEG/PNG, multer upload)' }
+        ],
+        response: `{ message: "Profile updated", customer: { ... } }`,
+        notes: 'Multipart form-data. All fields optional — only provided fields are updated. Image stored in Modules/Customer/Uploads/.'
+      }
+    ]
+  },
+
+  /* ─── 3. PRODUCTS ─── */
+  {
+    id: 'products',
+    icon: '📦', color: 'rgba(154,103,0,.1)',
+    title: 'Products',
+    sub: 'Browse catalogue, search, categories',
+    base: '/customer/v1',
+    endpoints: [
+      {
+        method: 'GET', path: '/products', auth: 'customer',
+        desc: 'Browse products (paginated, filterable)',
+        params: [
+          { name: 'page',     type: 'query int',    req: false, desc: 'Page number (default 1)' },
+          { name: 'limit',    type: 'query int',    req: false, desc: 'Items per page (default 20)' },
+          { name: 'category', type: 'query string', req: false, desc: 'Filter by category name' },
+          { name: 'brand',    type: 'query string', req: false, desc: 'Filter by brand name' },
+          { name: 'min',      type: 'query float',  req: false, desc: 'Minimum price filter' },
+          { name: 'max',      type: 'query float',  req: false, desc: 'Maximum price filter' }
+        ],
+        response: `{
+  products: [{
+    product_id, name, description, category,
+    unit, image_url, price, offer_price,
+    is_active, brand, tags, unit_size
+  }],
+  total: number,
+  page: number,
+  pages: number
+}`,
+        notes: 'Only returns products where is_active = true. Results come directly from MySQL (no Redis caching at this layer).'
+      },
+      {
+        method: 'GET', path: '/product/:productId', auth: 'customer',
+        desc: 'Get full detail for a single product',
+        params: [
+          { name: 'productId', type: 'path int', req: true, desc: 'Product ID from the products table' }
+        ],
+        response: `{
+  product_id, name, description, category,
+  unit, image_url, price, offer_price,
+  sku, brand, tags, unit_size, expiry_date,
+  is_active, created_at
+}`,
+        notes: 'Returns 404 if product not found or inactive.'
+      },
+      {
+        method: 'GET', path: '/products/search', auth: 'customer',
+        desc: 'Full-text keyword search across products',
+        params: [
+          { name: 'q',     type: 'query string', req: true,  desc: 'Search query (name, description, tags, brand)' },
+          { name: 'page',  type: 'query int',    req: false, desc: 'Page number' },
+          { name: 'limit', type: 'query int',    req: false, desc: 'Items per page' }
+        ],
+        response: `{ products: [...], total: number, page: number }`,
+        notes: 'Searches across name, description, tags, and brand columns using MySQL LIKE / FULLTEXT.'
+      },
+      {
+        method: 'GET', path: '/product-name-suggestion', auth: 'customer',
+        desc: 'Autocomplete product name suggestions',
+        params: [
+          { name: 'q', type: 'query string', req: true, desc: 'Partial product name (min 2 chars)' }
+        ],
+        response: `{ suggestions: ["Product A", "Product B", ...] }`,
+        notes: 'Returns up to 10 matching product names. Used to populate search autocomplete on the mobile home screen.'
+      },
+      {
+        method: 'GET', path: '/products/categories', auth: 'customer',
+        desc: 'Get all available product categories',
+        params: [],
+        response: `{ categories: ["Fruits", "Vegetables", "Dairy", ...] }`,
+        notes: 'Returns distinct category values from the products table where is_active = true.'
+      }
+    ]
+  },
+
+  /* ─── 4. SHOPPING CART ─── */
+  {
+    id: 'cart',
+    icon: '🛒', color: 'rgba(9,105,218,.1)',
+    title: 'Shopping Cart',
+    sub: 'Add, view, and remove cart items',
+    base: '/customer/v1',
+    endpoints: [
+      {
+        method: 'POST', path: '/product/add-to-cart', auth: 'customer',
+        desc: 'Add a product to the cart',
+        params: [
+          { name: 'product_id', type: 'int',  req: true,  desc: 'Product to add' },
+          { name: 'quantity',   type: 'int',  req: true,  desc: 'Number of units' }
+        ],
+        response: `{ message: "Added to cart", cartItemId: number }`,
+        notes: 'Cart is persisted in MySQL (not Redis). If product already exists in cart, quantity is incremented. Validates product is active before adding.'
+      },
+      {
+        method: 'GET', path: '/cart-items', auth: 'customer',
+        desc: 'Fetch current cart contents with product details',
+        params: [],
+        response: `{
+  items: [{
+    cartItemId, product_id, quantity,
+    name, image_url, price, offer_price, unit
+  }],
+  subtotal: number,
+  count: number
+}`,
+        notes: 'Returns item count and computed subtotal. Prices are taken from the live products table (not cached at add time).'
+      },
+      {
+        method: 'DELETE', path: '/delete/cart-item', auth: 'customer',
+        desc: 'Remove a specific item from the cart',
+        params: [
+          { name: 'cartItemId', type: 'int', req: true, desc: 'Cart item ID to remove (can be query param or body)' }
+        ],
+        response: `{ message: "Item removed from cart" }`,
+        notes: 'Hard-deletes the row from the cart table. To clear the entire cart (e.g. after order placement), call this for each item or use the order/create flow which auto-clears.'
+      }
+    ]
+  },
+
+  /* ─── 5. ORDERS ─── */
+  {
+    id: 'orders',
+    icon: '📋', color: 'rgba(130,80,223,.1)',
+    title: 'Orders',
+    sub: 'Place, track and cancel customer orders',
+    base: '/customer/v1',
+    endpoints: [
+      {
+        method: 'GET', path: '/orders', auth: 'customer',
+        desc: 'Get order history for current customer',
+        params: [
+          { name: 'status', type: 'query string', req: false, desc: 'Filter by order status (PENDING, CONFIRMED, PACKED, READY, ASSIGNED, PICKED_UP, DELIVERED, CANCELLED)' },
+          { name: 'page',   type: 'query int',    req: false, desc: 'Page number (default 1)' },
+          { name: 'limit',  type: 'query int',    req: false, desc: 'Items per page (default 10)' }
+        ],
+        response: `{
+  orders: [{
+    order_id, status, total_amount,
+    payment_status, created_at,
+    items: [{ name, quantity, price }]
+  }],
+  total: number
+}`,
+        notes: 'Paginated list sorted newest-first. Status transitions: PENDING → CONFIRMED → PACKED → READY → ASSIGNED → PICKED_UP → DELIVERED.'
+      },
+      {
+        method: 'POST', path: '/order/create', auth: 'customer',
+        desc: 'Place a new order (after payment capture)',
+        params: [
+          { name: 'address_id',       type: 'int',    req: true,  desc: 'Delivery address ID' },
+          { name: 'payment_id',       type: 'string', req: true,  desc: 'Razorpay payment ID from capture step' },
+          { name: 'razorpay_order_id',type: 'string', req: true,  desc: 'Razorpay order ID' },
+          { name: 'total_amount',     type: 'float',  req: true,  desc: 'Total order amount (₹)' },
+          { name: 'items',            type: 'array',  req: true,  desc: 'Array of { product_id, quantity, price }' }
+        ],
+        response: `{
+  message: "Order placed",
+  order_id: number,
+  status: "CONFIRMED"
+}`,
+        notes: 'Creates customer_orders + customer_order_items rows in MySQL. Clears the cart after successful creation. This is called AFTER Razorpay payment capture — do not call without a valid payment_id. Admin sees the order immediately via the shared DB.'
+      },
+      {
+        method: 'POST', path: '/order/cancel', auth: 'customer',
+        desc: 'Cancel an order (only if PENDING or CONFIRMED)',
+        params: [
+          { name: 'order_id', type: 'int',    req: true, desc: 'Order ID to cancel' },
+          { name: 'reason',   type: 'string', req: false, desc: 'Cancellation reason' }
+        ],
+        response: `{ message: "Order cancelled", order_id: number }`,
+        notes: 'Cancellation is only allowed before PACKED status. Returns 400 if the order is already in a non-cancellable state. Refund logic is handled separately (not automated).'
+      },
+      {
+        method: 'GET', path: '/dashboard', auth: 'customer',
+        desc: 'Get customer dashboard summary data',
+        params: [],
+        response: `{
+  total_orders: number,
+  pending_orders: number,
+  delivered_orders: number,
+  recent_orders: [...],
+  recent_products: [...]
+}`,
+        notes: 'Used on the Home tab to populate at-a-glance metrics and recent activity.'
+      }
+    ]
+  },
+
+  /* ─── 6. ADDRESSES ─── */
+  {
+    id: 'addresses',
+    icon: '📍', color: 'rgba(9,105,218,.1)',
+    title: 'Addresses',
+    sub: 'Manage saved delivery addresses',
+    base: '/customer/v1',
+    endpoints: [
+      {
+        method: 'POST', path: '/add-address', auth: 'customer',
+        desc: 'Save a new delivery address',
+        params: [
+          { name: 'label',      type: 'string', req: false, desc: 'Address label (Home, Work, etc.)' },
+          { name: 'line1',      type: 'string', req: true,  desc: 'Street / house number' },
+          { name: 'line2',      type: 'string', req: false, desc: 'Apartment / suite' },
+          { name: 'city',       type: 'string', req: true,  desc: 'City name' },
+          { name: 'state',      type: 'string', req: true,  desc: 'State name' },
+          { name: 'pincode',    type: 'string', req: true,  desc: '6-digit PIN code' },
+          { name: 'latitude',   type: 'float',  req: false, desc: 'GPS latitude (for map display)' },
+          { name: 'longitude',  type: 'float',  req: false, desc: 'GPS longitude' },
+          { name: 'is_default', type: 'bool',   req: false, desc: 'Set as default address' }
+        ],
+        response: `{ message: "Address saved", addressId: number }`,
+        notes: 'Addresses are linked to the customer via customerId from JWT. If is_default is true, all other addresses for the customer are set to non-default.'
+      },
+      {
+        method: 'GET', path: '/addresses', auth: 'customer',
+        desc: 'List all saved addresses for the customer',
+        params: [],
+        response: `{
+  addresses: [{
+    addressId, label, line1, line2,
+    city, state, pincode,
+    latitude, longitude, is_default
+  }]
+}`,
+        notes: 'Returns addresses sorted by is_default DESC, created_at DESC.'
+      },
+      {
+        method: 'PUT', path: '/address/edit/:addressId', auth: 'customer',
+        desc: 'Update an existing address',
+        params: [
+          { name: 'addressId',  type: 'path int', req: true,  desc: 'Address ID to update' },
+          { name: 'label',      type: 'string',   req: false, desc: 'New label' },
+          { name: 'line1',      type: 'string',   req: false, desc: 'Updated street' },
+          { name: 'line2',      type: 'string',   req: false, desc: 'Updated apt' },
+          { name: 'city',       type: 'string',   req: false, desc: 'Updated city' },
+          { name: 'state',      type: 'string',   req: false, desc: 'Updated state' },
+          { name: 'pincode',    type: 'string',   req: false, desc: 'Updated PIN' },
+          { name: 'is_default', type: 'bool',     req: false, desc: 'Set/unset default' }
+        ],
+        response: `{ message: "Address updated" }`,
+        notes: 'Only fields provided in the body are updated (partial update). Returns 404 if addressId does not belong to the authenticated customer.'
+      },
+      {
+        method: 'DELETE', path: '/delete/address/:addressId', auth: 'customer',
+        desc: 'Delete a saved address',
+        params: [
+          { name: 'addressId', type: 'path int', req: true, desc: 'Address ID to delete' }
+        ],
+        response: `{ message: "Address deleted" }`,
+        notes: 'Cannot delete an address linked to an active/pending order. Returns 400 in that case.'
+      }
+    ]
+  },
+
+  /* ─── 7. PRODUCT VIEWING ─── */
+  {
+    id: 'product-views',
+    icon: '👁️', color: 'rgba(87,96,106,.1)',
+    title: 'Product Viewing',
+    sub: 'Track and retrieve recently viewed products',
+    base: '/customer/v1',
+    endpoints: [
+      {
+        method: 'POST', path: '/product/add-recent-product/:product_id', auth: 'customer',
+        desc: 'Record a product view for the customer',
+        params: [
+          { name: 'product_id', type: 'path int', req: true, desc: 'Product ID that was viewed' }
+        ],
+        response: `{ message: "View recorded" }`,
+        notes: 'Called when the customer opens a product detail screen. Maintains a capped list of recently viewed products (typically last 10). Stored in MySQL or Redis depending on implementation.'
+      },
+      {
+        method: 'POST', path: '/product/recent-viewed-products', auth: 'customer',
+        desc: 'Get recently viewed products',
+        params: [
+          { name: 'limit', type: 'int', req: false, desc: 'Max items to return (default 10)' }
+        ],
+        response: `{
+  products: [{
+    product_id, name, image_url,
+    price, offer_price, category
+  }]
+}`,
+        notes: 'Returns the most recently viewed products for the authenticated customer, used on the Home screen "Recently Viewed" carousel.'
+      }
+    ]
+  },
+
+  /* ─── 8. EXCHANGES ─── */
+  {
+    id: 'exchanges',
+    icon: '🔄', color: 'rgba(207,34,46,.1)',
+    title: 'Exchanges & Returns',
+    sub: 'Request, track, and cancel product exchanges',
+    base: '/customer/v1',
+    endpoints: [
+      {
+        method: 'POST', path: '/order/exchange', auth: 'customer',
+        desc: 'Create an exchange or return request (multipart/form-data)',
+        params: [
+          { name: 'order_id',   type: 'int',    req: true,  desc: 'Original order ID' },
+          { name: 'product_id', type: 'int',    req: true,  desc: 'Product being exchanged' },
+          { name: 'reason',     type: 'string', req: true,  desc: 'Reason for exchange/return' },
+          { name: 'type',       type: 'string', req: true,  desc: '"exchange" or "return"' },
+          { name: 'images',     type: 'files',  req: false, desc: 'Evidence photos (up to 5, JPEG/PNG)' }
+        ],
+        response: `{
+  message: "Exchange request created",
+  exchangeId: number,
+  status: "PENDING"
+}`,
+        notes: 'Multipart form-data. Images are stored via multer. Exchange can only be raised within the return window. Creates a record in the customer_orders exchange table. Admin reviews via the common server.'
+      },
+      {
+        method: 'GET', path: '/exchanges', auth: 'customer',
+        desc: 'List all exchange requests for the customer',
+        params: [
+          { name: 'status', type: 'query string', req: false, desc: 'PENDING | APPROVED | REJECTED | COMPLETED' }
+        ],
+        response: `{
+  exchanges: [{
+    exchangeId, order_id, product_id,
+    type, reason, status, created_at,
+    images: [string]
+  }]
+}`,
+        notes: ''
+      },
+      {
+        method: 'GET', path: '/exchanges/:exchangeId', auth: 'customer',
+        desc: 'Get full detail for a single exchange request',
+        params: [
+          { name: 'exchangeId', type: 'path int', req: true, desc: 'Exchange request ID' }
+        ],
+        response: `{
+  exchangeId, order_id, product_id,
+  type, reason, status, admin_remarks,
+  images: [string], created_at, updated_at
+}`,
+        notes: 'Returns 404 if the exchange does not belong to the authenticated customer.'
+      },
+      {
+        method: 'POST', path: '/exchanges/:exchangeId/cancel', auth: 'customer',
+        desc: 'Cancel a pending exchange request',
+        params: [
+          { name: 'exchangeId', type: 'path int', req: true, desc: 'Exchange request ID to cancel' }
+        ],
+        response: `{ message: "Exchange request cancelled" }`,
+        notes: 'Only PENDING requests can be cancelled. Returns 400 if already approved or rejected.'
+      }
+    ]
+  },
+
+  /* ─── 9. NOTIFICATIONS ─── */
+  {
+    id: 'notifications',
+    icon: '🔔', color: 'rgba(9,105,218,.1)',
+    title: 'Notifications',
+    sub: 'Register Expo push token for the customer',
+    base: '/customer/v1',
+    endpoints: [
+      {
+        method: 'POST', path: '/save-push-token', auth: 'customer',
+        desc: 'Register or update the Expo push notification token',
+        params: [
+          { name: 'token', type: 'string', req: true, desc: 'Expo push token (format: ExponentPushToken[xxx])' }
+        ],
+        response: `{ message: "Push token saved" }`,
+        notes: 'Called on app launch/resume after Expo.Notifications.getExpoPushTokenAsync(). Token is stored in Redis against the customerId. Used by dtechcommonserver (via shared Redis) to send push notifications to the customer on order status changes (ASSIGNED, PICKED_UP, DELIVERED).'
+      }
+    ]
+  },
+
+  /* ─── 10. PAYMENTS ─── */
+  {
+    id: 'payments',
+    icon: '💳', color: 'rgba(5,80,174,.1)',
+    title: 'Payments',
+    sub: 'Razorpay order creation, capture, and webhook',
+    base: '/payment/v1',
+    endpoints: [
+      {
+        method: 'POST', path: '/order/create', auth: 'customer',
+        desc: 'Create a Razorpay payment order',
+        params: [
+          { name: 'amount',   type: 'int',    req: true, desc: 'Amount in paise (₹1 = 100 paise)' },
+          { name: 'currency', type: 'string', req: false, desc: 'ISO currency code (default "INR")' },
+          { name: 'notes',    type: 'object', req: false, desc: 'Optional key-value metadata' }
+        ],
+        response: `{
+  razorpay_order_id: string,  // e.g. "order_xxxx"
+  key: string,                // Razorpay key_id (for SDK init)
+  amount: number,
+  currency: string
+}`,
+        notes: 'dtechmobileapp calls the Razorpay API server-side using RAZORPAY_KEY_ID_TEST + RAZORPAY_KEY_SECRET_TEST. The returned razorpay_order_id is passed to the Razorpay React Native SDK to open the payment sheet. Order prefix: ORDERID_PREFIX env var (default "ORD-DS").'
+      },
+      {
+        method: 'POST', path: '/order/payments/capture', auth: 'customer',
+        desc: 'Verify Razorpay signature and capture payment',
+        params: [
+          { name: 'razorpay_order_id',   type: 'string', req: true, desc: 'Order ID from /order/create' },
+          { name: 'razorpay_payment_id', type: 'string', req: true, desc: 'Payment ID returned by Razorpay SDK' },
+          { name: 'razorpay_signature',  type: 'string', req: true, desc: 'HMAC signature from Razorpay SDK' }
+        ],
+        response: `{
+  message: "Payment captured",
+  payment_id: string,
+  status: "PAID"
+}`,
+        notes: 'Server verifies signature with HMAC-SHA256 using RAZORPAY_KEY_SECRET_TEST. On success, marks payment as PAID in DB. Call POST /customer/v1/order/create immediately after to create the order record.'
+      },
+      {
+        method: 'GET', path: '/order/payments/status/:orderId', auth: 'customer',
+        desc: 'Check payment status for an order',
+        params: [
+          { name: 'orderId', type: 'path string', req: true, desc: 'Razorpay order ID or internal order ID' }
+        ],
+        response: `{
+  order_id: string,
+  payment_status: "PENDING" | "PAID" | "FAILED",
+  amount: number,
+  paid_at: string | null
+}`,
+        notes: 'Used to poll payment status on the success/failure screen after returning from the Razorpay SDK payment sheet.'
+      },
+      {
+        method: 'POST', path: '/order/payments/webhook/capture', auth: 'webhook',
+        desc: 'Razorpay webhook — server-to-server payment confirmation',
+        params: [
+          { name: 'X-Razorpay-Signature', type: 'header string', req: true, desc: 'Webhook signature from Razorpay (verified with RAZORPAY_WEBHOOK_SECRET)' },
+          { name: 'payload', type: 'object', req: true, desc: 'Razorpay webhook event body (payment.captured event)' }
+        ],
+        response: `{ status: "ok" }`,
+        notes: 'No customer JWT required — authenticated via Razorpay HMAC signature. Handles payment.captured events to update payment_status = PAID in DB as a fallback (in case the client-side capture call failed). Configure this URL in the Razorpay dashboard under Webhooks.'
+      }
+    ]
+  }
+];
+
+/* ════════════════════════════════════════════════
+   RENDER
+════════════════════════════════════════════════ */
+let activeGroup = null;
+let activeIdx   = null;
+
+function methodClass(m) { return 'method-' + m.toLowerCase(); }
+
+function authBadge(auth) {
+  const map = {
+    customer: ['auth-customer', 'Bearer'],
+    none:     ['auth-none',     'Public'],
+    webhook:  ['auth-webhook',  'Signature'],
+    razorpay: ['auth-razorpay', 'Razorpay'],
+    cookie:   ['auth-none',     'Cookie']
+  };
+  const [cls, label] = map[auth] || ['auth-none', auth];
+  return `<span class="ep-auth ${cls}">${label}</span>`;
+}
+
+function highlightPath(path) {
+  return path.replace(/(:[^/]+)/g, '<span class="ep-param">$1</span>');
+}
+
+function renderAll() {
+  // ── sidebar ──
+  let sb = '';
+  GROUPS.forEach(g => {
+    sb += `<div class="sg" id="sg-${g.id}">
+      <div class="sg-header" onclick="toggleGroup('${g.id}')">
+        <span class="sg-left">${g.icon} ${g.title}</span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <span class="sg-count">${g.endpoints.length}</span>
+          <span class="sg-chevron">▾</span>
+        </span>
+      </div>
+      <div class="sg-items">`;
+    g.endpoints.forEach((ep, i) => {
+      sb += `<div class="sg-item" id="si-${g.id}-${i}" onclick="selectEndpoint('${g.id}',${i})">
+        <span class="method ${methodClass(ep.method)}" style="min-width:44px;font-size:10px;padding:2px 5px">${ep.method}</span>
+        <span style="font-family:monospace;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${ep.path}</span>
+      </div>`;
+    });
+    sb += `</div></div>`;
+  });
+  document.getElementById('sidebar-groups').innerHTML = sb;
+
+  // ── main content ──
+  let html = '';
+  GROUPS.forEach(g => {
+    html += `<section class="api-group" id="ag-${g.id}">
+      <div class="api-group-header">
+        <div class="api-group-icon" style="background:${g.color}">${g.icon}</div>
+        <div>
+          <div class="api-group-title">${g.title}</div>
+          <div class="api-group-sub">${g.sub}</div>
+        </div>
+        <span class="api-group-base">${g.base}</span>
+      </div>
+      <div class="endpoint-list">`;
+    g.endpoints.forEach((ep, i) => {
+      html += `<div class="endpoint-row" id="er-${g.id}-${i}" onclick="selectEndpoint('${g.id}',${i})">
+        <span class="method ${methodClass(ep.method)}">${ep.method}</span>
+        <span class="ep-path">${highlightPath(g.base + ep.path)}</span>
+        <span class="ep-desc">${ep.desc}</span>
+        ${authBadge(ep.auth)}
+        <span class="ep-click">›</span>
+      </div>`;
+    });
+    html += `</div></section>`;
+  });
+  document.getElementById('api-groups').innerHTML = html;
+}
+
+/* ════════════════════════════════════════════════
+   PANEL
+════════════════════════════════════════════════ */
+function selectEndpoint(groupId, idx) {
+  // Deactivate previous
+  if (activeGroup !== null) {
+    const prev = document.getElementById(`er-${activeGroup}-${activeIdx}`);
+    const prevSi = document.getElementById(`si-${activeGroup}-${activeIdx}`);
+    if (prev) prev.classList.remove('active');
+    if (prevSi) prevSi.classList.remove('active');
+  }
+  activeGroup = groupId;
+  activeIdx = idx;
+
+  const row = document.getElementById(`er-${groupId}-${idx}`);
+  const si  = document.getElementById(`si-${groupId}-${idx}`);
+  if (row) row.classList.add('active');
+  if (si)  si.classList.add('active');
+
+  const g  = GROUPS.find(g => g.id === groupId);
+  const ep = g.endpoints[idx];
+  const fullPath = g.base + ep.path;
+
+  document.getElementById('ph-method').innerHTML =
+    `<span class="method ${methodClass(ep.method)}" style="font-size:12px">${ep.method}</span>`;
+  document.getElementById('ph-path').textContent  = fullPath;
+  document.getElementById('ph-desc').textContent  = ep.desc;
+
+  let body = '';
+
+  // Auth
+  body += `<div class="ps">
+    <div class="ps-title">Auth</div>
+    <div class="kv-list">
+      <div class="kv">
+        <span class="kv-key">Type</span>
+        <span class="kv-val">${authBadge(ep.auth)}</span>
+      </div>
+      <div class="kv">
+        <span class="kv-key">Header</span>
+        <span class="kv-val">${ep.auth === 'customer' ? '<code>Authorization: Bearer &lt;token&gt;</code>' : ep.auth === 'webhook' ? '<code>X-Razorpay-Signature</code>' : ep.auth === 'cookie' ? '<code>Cookie: refreshToken=&lt;val&gt;</code>' : '—'}</span>
+      </div>
+    </div>
+  </div>`;
+
+  // Parameters
+  if (ep.params && ep.params.length > 0) {
+    body += `<div class="ps">
+      <div class="ps-title">Parameters / Body</div>
+      <table class="param-table">
+        <thead><tr><th>Name</th><th>Type</th><th>Required</th><th>Description</th></tr></thead>
+        <tbody>`;
+    ep.params.forEach(p => {
+      body += `<tr>
+        <td><span class="param-name">${p.name}</span></td>
+        <td><span class="param-type">${p.type}</span></td>
+        <td>${p.req ? '<span class="param-req">Yes</span>' : '<span class="param-opt">No</span>'}</td>
+        <td style="color:var(--text-muted)">${p.desc}</td>
+      </tr>`;
+    });
+    body += `</tbody></table></div>`;
+  } else {
+    body += `<div class="ps"><div class="ps-title">Parameters / Body</div><p style="font-size:12px;color:var(--text-muted)">No request body required.</p></div>`;
+  }
+
+  // Response
+  body += `<div class="ps">
+    <div class="ps-title">Response</div>
+    <div class="code-block">${ep.response.replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+  </div>`;
+
+  // Notes
+  if (ep.notes) {
+    body += `<div class="ps">
+      <div class="ps-title">Notes</div>
+      <p style="font-size:12px;color:var(--text-muted);line-height:1.6">${ep.notes}</p>
+    </div>`;
+  }
+
+  document.getElementById('panel-body').innerHTML = body;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('content').classList.add('panel-open');
+
+  // Scroll sidebar item into view
+  if (si) si.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  // Scroll endpoint row into view
+  if (row) row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('content').classList.remove('panel-open');
+  if (activeGroup !== null) {
+    const row = document.getElementById(`er-${activeGroup}-${activeIdx}`);
+    const si  = document.getElementById(`si-${activeGroup}-${activeIdx}`);
+    if (row) row.classList.remove('active');
+    if (si)  si.classList.remove('active');
+  }
+  activeGroup = null;
+  activeIdx   = null;
+}
+
+/* ════════════════════════════════════════════════
+   SIDEBAR TOGGLE
+════════════════════════════════════════════════ */
+function toggleGroup(id) {
+  document.getElementById('sg-' + id).classList.toggle('collapsed');
+}
+
+/* ════════════════════════════════════════════════
+   SEARCH / FILTER
+════════════════════════════════════════════════ */
+function filterEndpoints(query) {
+  const q = query.toLowerCase().trim();
+  GROUPS.forEach(g => {
+    let groupVisible = false;
+    g.endpoints.forEach((ep, i) => {
+      const text = [g.title, ep.method, g.base + ep.path, ep.desc, ep.auth].join(' ').toLowerCase();
+      const visible = !q || text.includes(q);
+      const row = document.getElementById(`er-${g.id}-${i}`);
+      const si  = document.getElementById(`si-${g.id}-${i}`);
+      if (row) row.classList.toggle('hidden', !visible);
+      if (si)  si.classList.toggle('hidden', !visible);
+      if (visible) groupVisible = true;
+    });
+    const groupEl = document.getElementById(`ag-${g.id}`);
+    const sgEl    = document.getElementById(`sg-${g.id}`);
+    if (groupEl) groupEl.classList.toggle('hidden', !groupVisible);
+    if (sgEl)    sgEl.style.display = groupVisible ? '' : 'none';
+
+    // Auto-expand groups that have matches when searching
+    if (q && groupVisible) {
+      document.getElementById(`sg-${g.id}`)?.classList.remove('collapsed');
+    }
+  });
+}
+
+/* ════════════════════════════════════════════════
+   KEYBOARD NAV
+════════════════════════════════════════════════ */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closePanel(); return; }
+  if (!activeGroup) return;
+  const g = GROUPS.find(g => g.id === activeGroup);
+  if (!g) return;
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    const next = activeIdx + 1 < g.endpoints.length ? activeIdx + 1 : 0;
+    selectEndpoint(activeGroup, next);
+  }
+  if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    const prev = activeIdx - 1 >= 0 ? activeIdx - 1 : g.endpoints.length - 1;
+    selectEndpoint(activeGroup, prev);
+  }
+});
+
+// Init
+renderAll();
+</script>
+</body>
+</html>

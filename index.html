@@ -1,0 +1,1920 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dtech Platform — Architecture</title>
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --surface2: #f6f8fa;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-muted: #57606a;
+    --accent-blue: #0969da;
+    --accent-green: #1a7f37;
+    --accent-orange: #9a6700;
+    --accent-purple: #8250df;
+    --accent-red: #cf222e;
+    --accent-cyan: #0550ae;
+    --panel-w: 420px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topnav-brand {
+    display: flex;
+    align-items: center;
+  }
+  .topnav-brand img {
+    height: 32px;
+    width: auto;
+  }
+  .topnav-links {
+    display: flex;
+    gap: 6px;
+  }
+  .topnav-links a {
+    padding: 6px 14px;
+    border-radius: 6px;
+    color: var(--text-muted);
+    text-decoration: none;
+    font-size: 13px;
+    transition: background .15s, color .15s;
+  }
+  .topnav-links a:hover, .topnav-links a.active {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  /* ── MAIN LAYOUT ── */
+  .main {
+    padding: 32px 28px;
+    transition: margin-right .25s;
+  }
+  .main.panel-open {
+    margin-right: var(--panel-w);
+  }
+
+  .section-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 16px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    margin-bottom: 40px;
+  }
+  .hero h1 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .hero p {
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+  .hero .badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  .badge-blue  { background: rgba(9,105,218,.1);   color: var(--accent-blue);   border: 1px solid rgba(9,105,218,.25); }
+  .badge-green { background: rgba(26,127,55,.1);   color: var(--accent-green);  border: 1px solid rgba(26,127,55,.25); }
+  .badge-orange{ background: rgba(154,103,0,.1);   color: var(--accent-orange); border: 1px solid rgba(154,103,0,.25); }
+  .badge-purple{ background: rgba(130,80,223,.1);  color: var(--accent-purple); border: 1px solid rgba(130,80,223,.25); }
+  .badge-red   { background: rgba(207,34,46,.1);   color: var(--accent-red);    border: 1px solid rgba(207,34,46,.25); }
+
+  /* ── PIPELINE ── */
+  .pipeline-wrap {
+    overflow-x: auto;
+    padding-bottom: 12px;
+  }
+  .pipeline {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    min-width: 900px;
+    margin-bottom: 40px;
+  }
+
+  .pipe-stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+  }
+  .pipe-stage:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 60%;
+    background: linear-gradient(to bottom, transparent, var(--border), transparent);
+  }
+
+  .pipe-stage-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+    text-align: center;
+  }
+
+  .pipe-nodes {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    padding: 0 8px;
+  }
+
+  /* ── NODE CARD ── */
+  .node {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: border-color .15s, transform .15s, box-shadow .15s;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .node:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0,0,0,.09);
+    border-color: #b1bac4;
+  }
+  .node.active {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(9,105,218,.12);
+  }
+
+  .node-accent { height: 3px; flex-shrink: 0; }
+
+  .node-body { padding: 12px 14px 10px; flex: 1; }
+
+  .node-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 8px;
+  }
+  .node-icon-wrap {
+    width: 34px; height: 34px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+    flex-shrink: 0;
+  }
+  .node-name {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 2px;
+    line-height: 1.2;
+    color: var(--text);
+  }
+  .node-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .node-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+  .npill {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .node-foot {
+    padding: 7px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .node-foot-hint {
+    font-size: 10px;
+    color: var(--accent-blue);
+    font-weight: 500;
+  }
+
+  /* ── HORIZONTAL ARROW BETWEEN STAGES ── */
+  .pipe-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 2px;
+    color: var(--text-muted);
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: -6px;
+  }
+
+  /* ── FLOWS SECTION ── */
+  .flows-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 20px;
+    margin-bottom: 40px;
+  }
+
+  .flow-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  .flow-card:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  }
+  .flow-card.active {
+    border-color: var(--accent-blue);
+    background: var(--surface2);
+  }
+  .flow-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .flow-card-icon {
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+  .flow-card-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .flow-card-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .flow-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .flow-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 6px 0;
+  }
+  .flow-step:not(:last-child) {
+    border-bottom: 1px solid var(--border);
+  }
+  .flow-step-num {
+    min-width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+  .flow-step-text {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .flow-step-text strong {
+    color: var(--text);
+    font-weight: 600;
+  }
+
+  /* ── SIDE PANEL ── */
+  .panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: var(--panel-w);
+    height: 100vh;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 200;
+    transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel.open {
+    transform: translateX(0);
+  }
+
+  .panel-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .panel-header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .panel-header-icon {
+    font-size: 28px;
+  }
+  .panel-header-title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .panel-header-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+  .panel-close {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s;
+    flex-shrink: 0;
+  }
+  .panel-close:hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
+
+  .panel-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-track { background: transparent; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .panel-section {
+    margin-bottom: 24px;
+  }
+  .panel-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .kv-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .kv {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .kv-key {
+    color: var(--text-muted);
+    font-size: 12px;
+    min-width: 90px;
+    flex-shrink: 0;
+  }
+  .kv-val {
+    font-size: 12px;
+    text-align: right;
+    word-break: break-word;
+  }
+
+  .api-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .api-table th {
+    text-align: left;
+    padding: 6px 8px;
+    background: var(--surface2);
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 11px;
+  }
+  .api-table td {
+    padding: 6px 8px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .api-table tr:last-child td { border-bottom: none; }
+  .api-table tr:hover td { background: rgba(0,0,0,.02); }
+
+  .method {
+    display: inline-block;
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: monospace;
+  }
+  .method-get    { background: rgba(26,127,55,.12);  color: #1a7f37; }
+  .method-post   { background: rgba(9,105,218,.12);  color: #0969da; }
+  .method-put    { background: rgba(154,103,0,.12);  color: #9a6700; }
+  .method-patch  { background: rgba(130,80,223,.12); color: #8250df; }
+  .method-delete { background: rgba(207,34,46,.12);  color: #cf222e; }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: var(--accent-blue);
+  }
+
+  .flow-timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .ft-step {
+    display: flex;
+    gap: 12px;
+    padding: 10px 0;
+    position: relative;
+  }
+  .ft-step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 32px;
+    bottom: 0;
+    width: 2px;
+    background: var(--border);
+  }
+  .ft-num {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 2px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    z-index: 1;
+  }
+  .ft-num.highlight {
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+  }
+
+  .ft-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .ft-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+  .ft-code {
+    margin-top: 4px;
+    font-size: 11px;
+  }
+
+  /* ── LEGEND ── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 32px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+  }
+
+  /* responsive */
+  @media (max-width: 768px) {
+    .main.panel-open { margin-right: 0; }
+    .panel { width: 100vw; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="topnav">
+  <div class="topnav-brand">
+    <img src="logo.png" alt="D Tech Creative" />
+  </div>
+  <div class="topnav-links">
+    <a href="index.html" class="active">Architecture</a>
+    <a href="flows.html">Data Flows</a>
+    <a href="database.html">Database</a>
+    <a href="api-common.html">API (Common)</a>
+    <a href="api-mobile.html">API (Mobile)</a>
+    <a href="tracker.html" target="_blank">Tracker</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main" id="main">
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Platform Architecture</h1>
+    <p>Click any node to explore its details, APIs, and connections.</p>
+    <div class="badges">
+      <span class="badge badge-green">4 Actors</span>
+      <span class="badge badge-blue">2 Backends</span>
+      <span class="badge badge-orange">Shared MySQL</span>
+      <span class="badge badge-purple">Redis Cache</span>
+      <span class="badge badge-red">Razorpay Payments</span>
+    </div>
+  </div>
+
+  <!-- LEGEND -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent-green)"></div> Customer</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent-orange)"></div> Vendor</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent-purple)"></div> Driver</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent-blue)"></div> Admin</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#6e7681"></div> Backend</div>
+    <div class="legend-item"><div class="legend-dot" style="background:var(--accent-red)"></div> Data Store</div>
+  </div>
+
+  <!-- PIPELINE -->
+  <p class="section-title">System Pipeline — Click any node for details</p>
+  <div class="pipeline-wrap">
+    <div class="pipeline" id="pipeline">
+
+      <!-- Stage 1: Actors / Clients -->
+      <div class="pipe-stage">
+        <div class="pipe-stage-label">Clients</div>
+        <div class="pipe-nodes">
+
+          <div class="node" data-node="customer-app" onclick="openPanel('customer-app')">
+            <div class="node-accent" style="background:var(--accent-green)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(26,127,55,.1)">📱</div>
+                <div>
+                  <div class="node-name">Customer App</div>
+                  <div class="node-sub">dtechcustomerserver</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">Expo 53</span>
+                <span class="npill">React Native 0.79</span>
+                <span class="npill">JavaScript</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>→ :3000</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+          <div class="node" data-node="vendor-client" onclick="openPanel('vendor-client')">
+            <div class="node-accent" style="background:var(--accent-orange)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(154,103,0,.1)">🏪</div>
+                <div>
+                  <div class="node-name">Vendor App</div>
+                  <div class="node-sub">Mobile + API client</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">JWT Bearer</span>
+                <span class="npill">/vendor/v1/*</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>→ :3001</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+          <div class="node" data-node="driver-client" onclick="openPanel('driver-client')">
+            <div class="node-accent" style="background:var(--accent-purple)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(130,80,223,.1)">🚗</div>
+                <div>
+                  <div class="node-name">Driver App</div>
+                  <div class="node-sub">Mobile + API client</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">JWT Bearer</span>
+                <span class="npill">/driver/v1/*</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>→ :3001</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+          <div class="node" data-node="admin-webapp" onclick="openPanel('admin-webapp')">
+            <div class="node-accent" style="background:var(--accent-blue)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(9,105,218,.1)">🖥️</div>
+                <div>
+                  <div class="node-name">Admin Dashboard</div>
+                  <div class="node-sub">React 19 + Vite 7 · SPA</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">TypeScript</span>
+                <span class="npill">Shadcn/UI</span>
+                <span class="npill">Port 5173</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>→ :3001</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">→</div>
+
+      <!-- Stage 2: Backends -->
+      <div class="pipe-stage">
+        <div class="pipe-stage-label">Backend APIs</div>
+        <div class="pipe-nodes">
+
+          <div class="node" data-node="dtechmobileapp" onclick="openPanel('dtechmobileapp')">
+            <div class="node-accent" style="background:var(--accent-green)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(26,127,55,.1)">⚡</div>
+                <div>
+                  <div class="node-name">dtechmobileapp</div>
+                  <div class="node-sub">Customer &amp; Payment APIs</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">Express 5</span>
+                <span class="npill">TypeScript</span>
+                <span class="npill">Razorpay</span>
+                <span class="npill">Redis</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>Port 3000</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+          <div class="node" data-node="dtechcommonserver" onclick="openPanel('dtechcommonserver')">
+            <div class="node-accent" style="background:var(--accent-blue)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(9,105,218,.1)">🔧</div>
+                <div>
+                  <div class="node-name">dtechcommonserver</div>
+                  <div class="node-sub">Admin, Vendor &amp; Driver APIs</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">Express 5</span>
+                <span class="npill">TypeScript</span>
+                <span class="npill">Expo Push</span>
+                <span class="npill">Puppeteer</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>Port 3001</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">→</div>
+
+      <!-- Stage 3: ORM -->
+      <div class="pipe-stage">
+        <div class="pipe-stage-label">ORM Layer</div>
+        <div class="pipe-nodes">
+
+          <div class="node" data-node="sequelize" onclick="openPanel('sequelize')">
+            <div class="node-accent" style="background:#8b949e"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(139,148,158,.12)">🔗</div>
+                <div>
+                  <div class="node-name">Sequelize ORM</div>
+                  <div class="node-sub">Both backends · Shared DB</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">v6.37</span>
+                <span class="npill">mysql2 driver</span>
+                <span class="npill">Shared schema</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>dtech_db</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">→</div>
+
+      <!-- Stage 4: Data Stores -->
+      <div class="pipe-stage">
+        <div class="pipe-stage-label">Data Stores</div>
+        <div class="pipe-nodes">
+
+          <div class="node" data-node="mysql" onclick="openPanel('mysql')">
+            <div class="node-accent" style="background:var(--accent-red)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(207,34,46,.1)">🗄️</div>
+                <div>
+                  <div class="node-name">MySQL</div>
+                  <div class="node-sub">Shared — 12 tables</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">dtech_db</span>
+                <span class="npill">Primary store</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>12 tables</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+          <div class="node" data-node="redis" onclick="openPanel('redis')">
+            <div class="node-accent" style="background:var(--accent-orange)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(154,103,0,.1)">⚡</div>
+                <div>
+                  <div class="node-name">Redis</div>
+                  <div class="node-sub">Cache + Rate limiting</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">ioredis</span>
+                <span class="npill">OTP</span>
+                <span class="npill">Push tokens</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>:6379</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="pipe-arrow">→</div>
+
+      <!-- Stage 5: External Services -->
+      <div class="pipe-stage">
+        <div class="pipe-stage-label">External Services</div>
+        <div class="pipe-nodes">
+
+          <div class="node" data-node="razorpay" onclick="openPanel('razorpay')">
+            <div class="node-accent" style="background:var(--accent-purple)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(130,80,223,.1)">💳</div>
+                <div>
+                  <div class="node-name">Razorpay</div>
+                  <div class="node-sub">Payment gateway</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">Orders</span>
+                <span class="npill">Capture</span>
+                <span class="npill">Webhooks</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>← dtechmobileapp</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+          <div class="node" data-node="expo-push" onclick="openPanel('expo-push')">
+            <div class="node-accent" style="background:var(--accent-blue)"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(9,105,218,.1)">🔔</div>
+                <div>
+                  <div class="node-name">Expo Push</div>
+                  <div class="node-sub">Push notifications</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">Customers</span>
+                <span class="npill">Drivers</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>← dtechcommonserver</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+          <div class="node" data-node="puppeteer" onclick="openPanel('puppeteer')">
+            <div class="node-accent" style="background:#8b949e"></div>
+            <div class="node-body">
+              <div class="node-header">
+                <div class="node-icon-wrap" style="background:rgba(139,148,158,.12)">📄</div>
+                <div>
+                  <div class="node-name">Puppeteer</div>
+                  <div class="node-sub">PDF generation</div>
+                </div>
+              </div>
+              <div class="node-pills">
+                <span class="npill">Headless Chrome</span>
+                <span class="npill">Manifests</span>
+              </div>
+            </div>
+            <div class="node-foot">
+              <span>← dtechcommonserver</span>
+              <span class="node-foot-hint">details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- DATA FLOWS OVERVIEW -->
+  <p class="section-title">Key Data Flows — Click to expand in panel</p>
+  <div class="flows-grid">
+
+    <!-- Flow 1: Customer Order -->
+    <div class="flow-card" data-flow="order-flow" onclick="openPanel('flow-customer-order')">
+      <div class="flow-card-header">
+        <div class="flow-card-icon" style="background:rgba(63,185,80,.15)">🛒</div>
+        <div>
+          <div class="flow-card-title">Customer Places an Order</div>
+          <div class="flow-card-sub">Browse → Cart → Pay → Track</div>
+        </div>
+      </div>
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-step-num">1</div>
+          <div class="flow-step-text"><strong>Browse products</strong> via dtechmobileapp:3000</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">2</div>
+          <div class="flow-step-text"><strong>Add to cart</strong> → stored in Redis</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">3</div>
+          <div class="flow-step-text"><strong>Razorpay payment</strong> → order confirmed in MySQL</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">4</div>
+          <div class="flow-step-text"><strong>Admin assigns driver</strong> → push notification sent</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">5</div>
+          <div class="flow-step-text"><strong>Driver delivers</strong> → order DELIVERED</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow 2: Vendor Restock -->
+    <div class="flow-card" data-flow="vendor-flow" onclick="openPanel('flow-vendor-restock')">
+      <div class="flow-card-header">
+        <div class="flow-card-icon" style="background:rgba(210,153,34,.15)">📦</div>
+        <div>
+          <div class="flow-card-title">Vendor Restock Order</div>
+          <div class="flow-card-sub">Login → Order → Approve → Manifest</div>
+        </div>
+      </div>
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-step-num">1</div>
+          <div class="flow-step-text"><strong>Vendor logs in</strong> via /common/v1/validateLogin</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">2</div>
+          <div class="flow-step-text"><strong>Create product order</strong> → order_details + order_products in DB</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">3</div>
+          <div class="flow-step-text"><strong>Admin approves</strong> → inventory updated at warehouse</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">4</div>
+          <div class="flow-step-text"><strong>Vendor generates PDF manifest</strong> via Puppeteer</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow 3: Vendor Verification -->
+    <div class="flow-card" data-flow="vendor-verify-flow" onclick="openPanel('flow-vendor-verification')">
+      <div class="flow-card-header">
+        <div class="flow-card-icon" style="background:rgba(154,103,0,.12)">🏪</div>
+        <div>
+          <div class="flow-card-title">Vendor Registration & Verification</div>
+          <div class="flow-card-sub">Register → Submit Docs → Admin Approves → Active</div>
+        </div>
+      </div>
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-step-num">1</div>
+          <div class="flow-step-text"><strong>Vendor submits profile</strong> with GST + trade licence files</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">2</div>
+          <div class="flow-step-text"><strong>Admin reviews</strong> vendor profile &amp; documents</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">3</div>
+          <div class="flow-step-text"><strong>Admin verifies</strong> → isDocumentVerified = true</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">4</div>
+          <div class="flow-step-text"><strong>Vendor active</strong> → can log in and place orders</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flow 4: Driver Verification -->
+    <div class="flow-card" data-flow="driver-flow" onclick="openPanel('flow-driver-verification')">
+      <div class="flow-card-header">
+        <div class="flow-card-icon" style="background:rgba(188,140,255,.15)">🪪</div>
+        <div>
+          <div class="flow-card-title">Driver Registration & Verification</div>
+          <div class="flow-card-sub">Register → Review → Approve → Active</div>
+        </div>
+      </div>
+      <div class="flow-steps">
+        <div class="flow-step">
+          <div class="flow-step-num">1</div>
+          <div class="flow-step-text"><strong>Driver submits docs</strong> (license, vehicle, photo) via multipart</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">2</div>
+          <div class="flow-step-text"><strong>Admin reviews</strong> documents in dashboard</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">3</div>
+          <div class="flow-step-text"><strong>Admin approves</strong> → isDocumentVerified = true</div>
+        </div>
+        <div class="flow-step">
+          <div class="flow-step-num">4</div>
+          <div class="flow-step-text"><strong>Driver active</strong> → can log in and receive orders</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /main -->
+
+<!-- SIDE PANEL -->
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <div class="panel-header-left">
+      <div class="panel-header-icon" id="panel-icon">📦</div>
+      <div>
+        <div class="panel-header-title" id="panel-title">Title</div>
+        <div class="panel-header-sub" id="panel-sub">Subtitle</div>
+      </div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</div>
+
+<script>
+const NODES = {
+
+  'customer-app': {
+    icon: '📱',
+    title: 'Customer App',
+    sub: 'dtechcustomerserver — React Native + Expo',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Stack</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Framework</span><span class="kv-val">Expo 53 + React Native 0.79.5</span></div>
+          <div class="kv"><span class="kv-key">Language</span><span class="kv-val">JavaScript</span></div>
+          <div class="kv"><span class="kv-key">Navigation</span><span class="kv-val">React Navigation (Bottom Tabs + Native Stack)</span></div>
+          <div class="kv"><span class="kv-key">UI Library</span><span class="kv-val">React Native Paper</span></div>
+          <div class="kv"><span class="kv-key">Maps</span><span class="kv-val">react-native-maps</span></div>
+          <div class="kv"><span class="kv-key">Auth Storage</span><span class="kv-val">AsyncStorage</span></div>
+          <div class="kv"><span class="kv-key">Payment</span><span class="kv-val">Razorpay React Native</span></div>
+          <div class="kv"><span class="kv-key">Push</span><span class="kv-val">Expo Push Notifications</span></div>
+          <div class="kv"><span class="kv-key">API Target</span><span class="kv-val">EXPO_PUBLIC_API_URL → dtechmobileapp:3000</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Auth Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Send OTP</div>
+              <div class="ft-desc">User enters phone number</div>
+              <div class="ft-code"><code>POST /customer/auth/v1/send-otp</code></div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">2</div>
+            <div class="ft-content">
+              <div class="ft-title">Verify OTP</div>
+              <div class="ft-desc">OTP validated from Redis → JWT returned</div>
+              <div class="ft-code"><code>POST /customer/auth/v1/validateLogin</code></div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">3</div>
+            <div class="ft-content">
+              <div class="ft-title">Store tokens</div>
+              <div class="ft-desc">JWT + refreshToken saved in AsyncStorage</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">4</div>
+            <div class="ft-content">
+              <div class="ft-title">Authenticated requests</div>
+              <div class="ft-desc"><code>Authorization: Bearer &lt;token&gt;</code> on all calls</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Screen Navigation</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Entry</span><span class="kv-val">Splash → Onboarding → Auth</span></div>
+          <div class="kv"><span class="kv-key">Home Tab</span><span class="kv-val">Products · Product Detail · Cart · Checkout</span></div>
+          <div class="kv"><span class="kv-key">Orders Tab</span><span class="kv-val">Orders List · Order Detail / Tracking</span></div>
+          <div class="kv"><span class="kv-key">Store Tab</span><span class="kv-val">Inventory · Add Product · Low Stock · Pickup</span></div>
+          <div class="kv"><span class="kv-key">Settings</span><span class="kv-val">Profile · Help Desk · Tickets</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'vendor-client': {
+    icon: '🏪',
+    title: 'Vendor App / Client',
+    sub: 'Authenticates via dtechcommonserver:3001',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Auth Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Send OTP</div>
+              <div class="ft-code"><code>POST /common/v1/send-otp</code></div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">2</div>
+            <div class="ft-content">
+              <div class="ft-title">Validate Login</div>
+              <div class="ft-desc">userType: "vendor" → JWT returned</div>
+              <div class="ft-code"><code>POST /common/v1/validateLogin</code></div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">3</div>
+            <div class="ft-content">
+              <div class="ft-title">Use vendor APIs</div>
+              <div class="ft-desc">All calls hit <code>/vendor/v1/*</code> with Bearer token</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Key Vendor Capabilities</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Dashboard</span><span class="kv-val">GET /vendor/v1/dashboard</span></div>
+          <div class="kv"><span class="kv-key">Orders</span><span class="kv-val">GET + POST /vendor/v1/order/*</span></div>
+          <div class="kv"><span class="kv-key">Inventory</span><span class="kv-val">GET /vendor/v1/inventory/products</span></div>
+          <div class="kv"><span class="kv-key">Manifests</span><span class="kv-val">POST /vendor/v1/order/generate-manifest (PDF)</span></div>
+          <div class="kv"><span class="kv-key">Support</span><span class="kv-val">POST /vendor/v1/register/sr</span></div>
+          <div class="kv"><span class="kv-key">Low Stock</span><span class="kv-val">GET /vendor/v1/low-product-alert</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Middleware</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Auth</span><span class="kv-val">TokenAuthentication.ts</span></div>
+          <div class="kv"><span class="kv-key">Token Payload</span><span class="kv-val">{ vendorId, phone }</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'driver-client': {
+    icon: '🚗',
+    title: 'Driver App / Client',
+    sub: 'Authenticates via dtechcommonserver:3001',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Auth Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Validate Login</div>
+              <div class="ft-desc">userType: "driver" → JWT returned</div>
+              <div class="ft-code"><code>POST /common/v1/validateLogin</code></div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">2</div>
+            <div class="ft-content">
+              <div class="ft-title">Use driver APIs</div>
+              <div class="ft-desc">All calls hit <code>/driver/v1/*</code> with Bearer token</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Driver Lifecycle APIs</div>
+        <table class="api-table">
+          <tr><th>Action</th><th>Endpoint</th></tr>
+          <tr><td>Go Online</td><td><code>PUT /driver/v1/status</code></td></tr>
+          <tr><td>Update Location</td><td><code>PUT /driver/v1/location</code></td></tr>
+          <tr><td>View Available Orders</td><td><code>GET /driver/v1/available</code></td></tr>
+          <tr><td>Accept Order</td><td><code>POST /driver/v1/:id/accept</code></td></tr>
+          <tr><td>Mark Picked Up</td><td><code>PUT /driver/v1/:id/pickup</code></td></tr>
+          <tr><td>Mark Delivered</td><td><code>PUT /driver/v1/:id/deliver</code></td></tr>
+          <tr><td>Cancel Delivery</td><td><code>POST /driver/v1/:id/cancel</code></td></tr>
+          <tr><td>Initiate Return (RTO)</td><td><code>POST /driver/v1/:id/return</code></td></tr>
+        </table>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Middleware</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Auth</span><span class="kv-val">DriverTokenAuthenticator.ts</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'admin-webapp': {
+    icon: '🖥️',
+    title: 'Admin Dashboard',
+    sub: 'dtechadminwebapp — React 19 + Vite 7',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Stack</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Framework</span><span class="kv-val">React 19.1 + Vite 7 + TypeScript</span></div>
+          <div class="kv"><span class="kv-key">UI</span><span class="kv-val">Radix UI + Tailwind CSS 4 + Shadcn/UI</span></div>
+          <div class="kv"><span class="kv-key">Charts</span><span class="kv-val">Recharts</span></div>
+          <div class="kv"><span class="kv-key">Routing</span><span class="kv-val">React Router DOM 7</span></div>
+          <div class="kv"><span class="kv-key">Dev Port</span><span class="kv-val">5173</span></div>
+          <div class="kv"><span class="kv-key">API Target</span><span class="kv-val">dtechcommonserver:3001</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Auth Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Login</div>
+              <div class="ft-code"><code>POST /admin/v1/login</code></div>
+              <div class="ft-desc">Returns JWT access token + HTTP-only refresh cookie</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">2</div>
+            <div class="ft-content">
+              <div class="ft-title">Store token in localStorage</div>
+              <div class="ft-desc">All requests: <code>Authorization: Bearer &lt;token&gt;</code></div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">3</div>
+            <div class="ft-content">
+              <div class="ft-title">Token Refresh on 401</div>
+              <div class="ft-code"><code>POST /admin/v1/refresh-token</code></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Pages</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">/</span><span class="kv-val">Dashboard (metrics)</span></div>
+          <div class="kv"><span class="kv-key">/vendors</span><span class="kv-val">Vendor Management</span></div>
+          <div class="kv"><span class="kv-key">/customers</span><span class="kv-val">Customer Management</span></div>
+          <div class="kv"><span class="kv-key">/drivers</span><span class="kv-val">Driver Management</span></div>
+          <div class="kv"><span class="kv-key">/orders</span><span class="kv-val">Vendor Orders</span></div>
+          <div class="kv"><span class="kv-key">/usersorders</span><span class="kv-val">Customer Orders</span></div>
+          <div class="kv"><span class="kv-key">/products</span><span class="kv-val">Product Catalogue</span></div>
+          <div class="kv"><span class="kv-key">/warehouses</span><span class="kv-val">Warehouse Management</span></div>
+          <div class="kv"><span class="kv-key">/tickets</span><span class="kv-val">Support Tickets</span></div>
+          <div class="kv"><span class="kv-key">/analytics/*</span><span class="kv-val">Sales, Users, Drivers, Geographic</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Roles</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">SuperAdmin</span><span class="kv-val">Full access incl. admin management</span></div>
+          <div class="kv"><span class="kv-key">Admin</span><span class="kv-val">Operational access</span></div>
+          <div class="kv"><span class="kv-key">Token</span><span class="kv-val">{ adminId, role, email }</span></div>
+          <div class="kv"><span class="kv-key">Middleware</span><span class="kv-val">AdminTokenAuthenticator.ts</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'dtechmobileapp': {
+    icon: '⚡',
+    title: 'dtechmobileapp',
+    sub: 'Express 5 + TypeScript — Port 3000',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Stack</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Framework</span><span class="kv-val">Express.js 5.1 + TypeScript</span></div>
+          <div class="kv"><span class="kv-key">ORM</span><span class="kv-val">Sequelize 6.37 → MySQL</span></div>
+          <div class="kv"><span class="kv-key">Auth</span><span class="kv-val">JWT</span></div>
+          <div class="kv"><span class="kv-key">Cache</span><span class="kv-val">ioredis (Redis)</span></div>
+          <div class="kv"><span class="kv-key">Rate Limiting</span><span class="kv-val">express-rate-limit + rate-limit-redis</span></div>
+          <div class="kv"><span class="kv-key">Payment</span><span class="kv-val">Razorpay 2.9.6</span></div>
+          <div class="kv"><span class="kv-key">Port</span><span class="kv-val">3000</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Route Groups</div>
+        <table class="api-table">
+          <tr><th>Prefix</th><th>Purpose</th></tr>
+          <tr><td><code>/customer/auth/v1/*</code></td><td>OTP login, JWT issue</td></tr>
+          <tr><td><code>/customer/v1/*</code></td><td>Profile, Products, Cart, Orders, Addresses, Exchanges</td></tr>
+          <tr><td><code>/payment/v1/*</code></td><td>Razorpay create, capture, webhook</td></tr>
+        </table>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Owned DB Tables</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">customer_orders</span><span class="kv-val">CREATED / PENDING / CONFIRMED / DELIVERED / CANCELLED</span></div>
+          <div class="kv"><span class="kv-key">customer_order_items</span><span class="kv-val">Links orders → vendors, products, inventories</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Key ENV Vars</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">SECRET_KEY</span><span class="kv-val">JWT signing secret</span></div>
+          <div class="kv"><span class="kv-key">REDIS_URL</span><span class="kv-val">redis://localhost:6379</span></div>
+          <div class="kv"><span class="kv-key">RAZORPAY_KEY_ID_TEST</span><span class="kv-val">rzp_test_xxxx</span></div>
+          <div class="kv"><span class="kv-key">ORDERID_PREFIX</span><span class="kv-val">ORD-DS</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'dtechcommonserver': {
+    icon: '🔧',
+    title: 'dtechcommonserver',
+    sub: 'Express 5 + TypeScript — Port 3001',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Stack</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Framework</span><span class="kv-val">Express.js 5.1 + TypeScript</span></div>
+          <div class="kv"><span class="kv-key">ORM</span><span class="kv-val">Sequelize 6.37 → MySQL</span></div>
+          <div class="kv"><span class="kv-key">Auth</span><span class="kv-val">JWT access + HTTP-only cookie refresh</span></div>
+          <div class="kv"><span class="kv-key">Security</span><span class="kv-val">Helmet + CORS</span></div>
+          <div class="kv"><span class="kv-key">Push</span><span class="kv-val">Expo Server SDK</span></div>
+          <div class="kv"><span class="kv-key">PDF</span><span class="kv-val">Puppeteer</span></div>
+          <div class="kv"><span class="kv-key">Port</span><span class="kv-val">3001</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Route Groups</div>
+        <table class="api-table">
+          <tr><th>Prefix</th><th>Consumers</th></tr>
+          <tr><td><code>/admin/v1/*</code></td><td>Admin dashboard</td></tr>
+          <tr><td><code>/vendor/v1/*</code></td><td>Vendor mobile/app</td></tr>
+          <tr><td><code>/driver/v1/*</code></td><td>Driver mobile/app</td></tr>
+          <tr><td><code>/common/v1/*</code></td><td>Vendor + Driver auth, profile</td></tr>
+        </table>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Owned DB Tables</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">products</span><span class="kv-val">Catalogue</span></div>
+          <div class="kv"><span class="kv-key">vendors</span><span class="kv-val">Vendor records + docs</span></div>
+          <div class="kv"><span class="kv-key">warehouses</span><span class="kv-val">Warehouse locations</span></div>
+          <div class="kv"><span class="kv-key">inventories</span><span class="kv-val">Stock per vendor/warehouse</span></div>
+          <div class="kv"><span class="kv-key">order_details</span><span class="kv-val">Vendor → Warehouse orders</span></div>
+          <div class="kv"><span class="kv-key">order_products</span><span class="kv-val">Line items of vendor orders</span></div>
+          <div class="kv"><span class="kv-key">service_records</span><span class="kv-val">Vendor support tickets</span></div>
+          <div class="kv"><span class="kv-key">driver_support_tickets</span><span class="kv-val">Driver tickets</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'sequelize': {
+    icon: '🔗',
+    title: 'Sequelize ORM',
+    sub: 'v6.37 — mysql2 driver — both backends',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Key Facts</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Version</span><span class="kv-val">Sequelize 6.37</span></div>
+          <div class="kv"><span class="kv-key">Driver</span><span class="kv-val">mysql2</span></div>
+          <div class="kv"><span class="kv-key">Both servers</span><span class="kv-val">Connect to same MySQL database</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Shared Schema Pattern</div>
+        <div class="ft-desc" style="color:var(--text-muted);font-size:13px;line-height:1.6">
+          Both <strong>dtechmobileapp</strong> and <strong>dtechcommonserver</strong> connect to the same <code>dtech_db</code> MySQL database. Each backend defines its own Sequelize models and associations but they share the same physical tables.<br><br>
+          <strong>dtechcommonserver</strong> owns the core tables (vendors, products, warehouses, inventories, orders).<br><br>
+          <strong>dtechmobileapp</strong> owns customer-facing tables (customer_orders, customer_order_items) but reads shared tables like products and inventories via its own model definitions.
+        </div>
+      </div>
+    `
+  },
+
+  'mysql': {
+    icon: '🗄️',
+    title: 'MySQL Database',
+    sub: 'dtech_db — shared by both backends',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Connection</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Database</span><span class="kv-val">dtech_db</span></div>
+          <div class="kv"><span class="kv-key">Consumers</span><span class="kv-val">dtechcommonserver (3001) + dtechmobileapp (3000)</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Core Tables</div>
+        <table class="api-table">
+          <tr><th>Table</th><th>Owner</th></tr>
+          <tr><td>products</td><td>commonserver</td></tr>
+          <tr><td>vendors</td><td>commonserver</td></tr>
+          <tr><td>warehouses</td><td>commonserver</td></tr>
+          <tr><td>inventories</td><td>commonserver</td></tr>
+          <tr><td>order_details</td><td>commonserver</td></tr>
+          <tr><td>order_products</td><td>commonserver</td></tr>
+          <tr><td>service_records</td><td>commonserver</td></tr>
+          <tr><td>driver_support_tickets</td><td>commonserver</td></tr>
+          <tr><td>customer_orders</td><td>mobileapp</td></tr>
+          <tr><td>customer_order_items</td><td>mobileapp</td></tr>
+        </table>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Entity Relationships</div>
+        <div class="ft-desc" style="color:var(--text-muted);font-size:12px;line-height:1.8;font-family:monospace">
+          warehouses ──&lt; inventories &gt;── vendors<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── products<br><br>
+          vendors ──&lt; order_details ──&lt; order_products &gt;── products<br><br>
+          customers ──&lt; customer_orders ──&lt; customer_order_items<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&gt;── products<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&gt;── vendors<br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&gt;── inventories
+        </div>
+      </div>
+    `
+  },
+
+  'redis': {
+    icon: '⚡',
+    title: 'Redis',
+    sub: 'ioredis — rate limiting, cache, OTP',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Connection</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">URL</span><span class="kv-val">redis://localhost:6379</span></div>
+          <div class="kv"><span class="kv-key">Client</span><span class="kv-val">ioredis (dtechmobileapp)</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Use Cases</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">OTP Storage</span><span class="kv-val">Customer OTPs stored with TTL</span></div>
+          <div class="kv"><span class="kv-key">Rate Limiting</span><span class="kv-val">express-rate-limit + rate-limit-redis</span></div>
+          <div class="kv"><span class="kv-key">Push Tokens</span><span class="kv-val">Expo push tokens cached</span></div>
+          <div class="kv"><span class="kv-key">Cart</span><span class="kv-val">Shopping cart items</span></div>
+          <div class="kv"><span class="kv-key">Session Cache</span><span class="kv-val">General session data</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'razorpay': {
+    icon: '💳',
+    title: 'Razorpay',
+    sub: 'Payment gateway — dtechmobileapp integration',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Integration</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">SDK (Backend)</span><span class="kv-val">razorpay 2.9.6</span></div>
+          <div class="kv"><span class="kv-key">SDK (Mobile)</span><span class="kv-val">Razorpay React Native</span></div>
+          <div class="kv"><span class="kv-key">Backend</span><span class="kv-val">dtechmobileapp (Port 3000)</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Payment Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Create Razorpay Order</div>
+              <div class="ft-code"><code>POST /payment/v1/order/create</code></div>
+              <div class="ft-desc">Returns Razorpay order ID + key to mobile</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">2</div>
+            <div class="ft-content">
+              <div class="ft-title">Payment UI on Mobile</div>
+              <div class="ft-desc">Razorpay SDK opens payment sheet</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">3</div>
+            <div class="ft-content">
+              <div class="ft-title">Capture + Verify</div>
+              <div class="ft-code"><code>POST /payment/v1/order/payments/capture</code></div>
+              <div class="ft-desc">Verifies signature → creates CustomerOrder in MySQL → status CONFIRMED</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">4</div>
+            <div class="ft-content">
+              <div class="ft-title">Webhook (async)</div>
+              <div class="ft-code"><code>POST /payment/v1/order/payments/webhook/capture</code></div>
+              <div class="ft-desc">Razorpay fires event → payment_status = PAID</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  'expo-push': {
+    icon: '🔔',
+    title: 'Expo Push Notifications',
+    sub: 'Server SDK — dtechcommonserver',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Integration</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">SDK</span><span class="kv-val">Expo Server SDK (Node.js)</span></div>
+          <div class="kv"><span class="kv-key">Backend</span><span class="kv-val">dtechcommonserver (Port 3001)</span></div>
+          <div class="kv"><span class="kv-key">Token Storage</span><span class="kv-val">Redis</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Trigger Points</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Driver assigned</span><span class="kv-val">Admin assigns driver → push to driver</span></div>
+          <div class="kv"><span class="kv-key">Order accepted</span><span class="kv-val">Driver accepts → push to customer</span></div>
+          <div class="kv"><span class="kv-key">Order picked up</span><span class="kv-val">Driver marks pickup → push to customer</span></div>
+          <div class="kv"><span class="kv-key">Order delivered</span><span class="kv-val">Delivery confirmed → push to customer</span></div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Token Registration</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Driver</span><span class="kv-val">POST /driver/v1/save-push-token</span></div>
+          <div class="kv"><span class="kv-key">Customer</span><span class="kv-val">POST /customer/v1/save-push-token</span></div>
+          <div class="kv"><span class="kv-key">Vendor/Driver (common)</span><span class="kv-val">POST /common/v1/save-fcmtoken</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'puppeteer': {
+    icon: '📄',
+    title: 'Puppeteer',
+    sub: 'PDF generation — dtechcommonserver',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Use Case</div>
+        <div class="ft-desc" style="color:var(--text-muted);font-size:13px;line-height:1.6">
+          Puppeteer runs headless Chrome inside dtechcommonserver to generate PDF manifests for vendor orders. When a vendor calls <code>POST /vendor/v1/order/generate-manifest</code>, the server renders an HTML template with the order data and returns a PDF binary.
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Endpoint</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Route</span><span class="kv-val">POST /vendor/v1/order/generate-manifest</span></div>
+          <div class="kv"><span class="kv-key">Auth</span><span class="kv-val">Bearer JWT (vendor)</span></div>
+          <div class="kv"><span class="kv-key">Returns</span><span class="kv-val">PDF binary (application/pdf)</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'flow-vendor-verification': {
+    icon: '🏪',
+    title: 'Vendor Verification Flow',
+    sub: '5-step vendor onboarding lifecycle',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Complete Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Vendor submits profile &amp; documents</div>
+              <div class="ft-code"><code>POST /common/v1/vendor/update-profile</code></div>
+              <div class="ft-desc">multipart/form-data: name, email, phone, address, gstId, gstFile, tradeLicenseFile. Files stored via Multer.</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">2</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin lists unverified vendors</div>
+              <div class="ft-code"><code>GET /admin/v1/vendors?status=unverified</code></div>
+              <div class="ft-desc">Admin sees all vendors pending document review in Vendor Management page.</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">3</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin reviews vendor profile &amp; docs</div>
+              <div class="ft-code"><code>GET /admin/v1/vendors/:vendorId</code></div>
+              <div class="ft-desc">Full vendor profile including document file URLs. Admin inspects GST + trade licence via DocumentViewer component.</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">4</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin verifies or rejects</div>
+              <div class="ft-code"><code>POST /admin/v1/vendors/verify</code></div>
+              <div class="ft-desc">On approval: isDocumentVerified = true. On rejection: remarks stored with reason. Admin can also toggle active status separately.</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">5</div>
+            <div class="ft-content">
+              <div class="ft-title">Vendor logs in and operates</div>
+              <div class="ft-code"><code>POST /common/v1/validateLogin</code> (userType: "vendor")</div>
+              <div class="ft-desc">JWT returned. Vendor can now place restock orders, manage inventory, and register support tickets.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Admin Controls After Verification</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Activate/Suspend</span><span class="kv-val">PATCH /admin/v1/vendors/:id/status</span></div>
+          <div class="kv"><span class="kv-key">Edit Vendor</span><span class="kv-val">PUT /admin/v1/vendors/:id</span></div>
+          <div class="kv"><span class="kv-key">Delete Vendor</span><span class="kv-val">DELETE /admin/v1/vendors/:id (SuperAdmin)</span></div>
+          <div class="kv"><span class="kv-key">Assign Warehouse</span><span class="kv-val">vendor.warehouse_id FK → warehouses</span></div>
+        </div>
+      </div>
+    `
+  },
+
+  'flow-customer-order': {
+    icon: '🛒',
+    title: 'Customer Order Flow',
+    sub: '10-step end-to-end order lifecycle',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Complete Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Browse Products</div>
+              <div class="ft-code"><code>GET /customer/v1/products</code> → dtechmobileapp</div>
+              <div class="ft-desc">Filtered, paginated product list from MySQL</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">2</div>
+            <div class="ft-content">
+              <div class="ft-title">Add to Cart</div>
+              <div class="ft-code"><code>POST /customer/v1/product/add-to-cart</code></div>
+              <div class="ft-desc">Cart stored in Redis</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">3</div>
+            <div class="ft-content">
+              <div class="ft-title">Create Razorpay Order</div>
+              <div class="ft-code"><code>POST /payment/v1/order/create</code></div>
+              <div class="ft-desc">Backend calls Razorpay API → returns order ID + key</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">4</div>
+            <div class="ft-content">
+              <div class="ft-title">Razorpay Payment UI</div>
+              <div class="ft-desc">Native payment sheet on mobile</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">5</div>
+            <div class="ft-content">
+              <div class="ft-title">Capture Payment</div>
+              <div class="ft-code"><code>POST /payment/v1/order/payments/capture</code></div>
+              <div class="ft-desc">Verify Razorpay signature → create CustomerOrder + Items in MySQL → status CONFIRMED</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num">6</div>
+            <div class="ft-content">
+              <div class="ft-title">Webhook Confirmation</div>
+              <div class="ft-code"><code>POST /payment/v1/order/payments/webhook/capture</code></div>
+              <div class="ft-desc">Razorpay fires async event → payment_status = PAID</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">7</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin Views Order</div>
+              <div class="ft-code"><code>GET /admin/v1/usersorders/users/orders</code> → dtechcommonserver</div>
+              <div class="ft-desc">Reads customer_orders from shared MySQL</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">8</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin Assigns Driver</div>
+              <div class="ft-code"><code>POST /admin/v1/usersorders/orders/:id/assign-driver</code></div>
+              <div class="ft-desc">Updates order with driver_id → push notification to driver via Expo</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">9</div>
+            <div class="ft-content">
+              <div class="ft-title">Driver Accepts & Picks Up</div>
+              <div class="ft-code"><code>POST /driver/v1/:id/accept</code><br><code>PUT /driver/v1/:id/pickup</code></div>
+              <div class="ft-desc">Each step sends push notification to customer</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">10</div>
+            <div class="ft-content">
+              <div class="ft-title">Delivered</div>
+              <div class="ft-code"><code>PUT /driver/v1/:id/deliver</code></div>
+              <div class="ft-desc">Order marked DELIVERED → customer sees status update in app</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  'flow-vendor-restock': {
+    icon: '📦',
+    title: 'Vendor Restock Flow',
+    sub: '6-step vendor order lifecycle',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Complete Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Vendor Logs In</div>
+              <div class="ft-code"><code>POST /common/v1/validateLogin</code></div>
+              <div class="ft-desc">userType: "vendor" → JWT returned</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">2</div>
+            <div class="ft-content">
+              <div class="ft-title">View Available Products</div>
+              <div class="ft-code"><code>GET /vendor/v1/inventory/products</code></div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">3</div>
+            <div class="ft-content">
+              <div class="ft-title">Create Order</div>
+              <div class="ft-code"><code>POST /vendor/v1/create-product-order</code></div>
+              <div class="ft-desc">Creates order_details + order_products rows in MySQL</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">4</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin Reviews</div>
+              <div class="ft-code"><code>GET /admin/v1/orders/incoming</code></div>
+              <div class="ft-desc">Pending vendor orders visible in admin dashboard</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">5</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin Approves</div>
+              <div class="ft-code"><code>POST /admin/v1/orders/approve</code></div>
+              <div class="ft-desc">order_status = approved → inventory quantity updated at warehouse</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">6</div>
+            <div class="ft-content">
+              <div class="ft-title">Vendor Generates Manifest</div>
+              <div class="ft-code"><code>POST /vendor/v1/order/generate-manifest</code></div>
+              <div class="ft-desc">Puppeteer generates PDF → returned to vendor</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `
+  },
+
+  'flow-driver-verification': {
+    icon: '🪪',
+    title: 'Driver Registration & Verification',
+    sub: '4-step document verification flow',
+    content: `
+      <div class="panel-section">
+        <div class="panel-section-title">Complete Flow</div>
+        <div class="flow-timeline">
+          <div class="ft-step">
+            <div class="ft-num highlight">1</div>
+            <div class="ft-content">
+              <div class="ft-title">Driver Submits Registration</div>
+              <div class="ft-code"><code>POST /common/v1/driver/update-profile</code></div>
+              <div class="ft-desc">Uploads: license, vehicle docs, photo via multipart/form-data. Files stored in Modules/Driver/Uploads/</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">2</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin Reviews Documents</div>
+              <div class="ft-code"><code>GET /admin/v1/drivers/:driverId</code></div>
+              <div class="ft-desc">Admin views docs via DocumentViewer component in dashboard</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">3</div>
+            <div class="ft-content">
+              <div class="ft-title">Admin Approves / Rejects</div>
+              <div class="ft-code"><code>PUT /admin/v1/drivers/:driverId/verify</code><br><code>PUT /admin/v1/drivers/:driverId/reject</code></div>
+              <div class="ft-desc">isDocumentVerified = true on approval</div>
+            </div>
+          </div>
+          <div class="ft-step">
+            <div class="ft-num highlight">4</div>
+            <div class="ft-content">
+              <div class="ft-title">Driver Active</div>
+              <div class="ft-desc">Driver can now log in, go online, and receive delivery orders</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Additional Admin Controls</div>
+        <div class="kv-list">
+          <div class="kv"><span class="kv-key">Suspend</span><span class="kv-val">PUT /admin/v1/drivers/:id/status</span></div>
+          <div class="kv"><span class="kv-key">Add Remarks</span><span class="kv-val">PUT /admin/v1/drivers/:id/remarks</span></div>
+          <div class="kv"><span class="kv-key">Analytics</span><span class="kv-val">GET /admin/v1/drivers/:id/analytics</span></div>
+          <div class="kv"><span class="kv-key">Payouts</span><span class="kv-val">GET /admin/v1/drivers/:id/payouts</span></div>
+        </div>
+      </div>
+    `
+  }
+
+};
+
+let activeNode = null;
+
+function openPanel(key) {
+  const node = NODES[key];
+  if (!node) return;
+
+  // update active styling
+  document.querySelectorAll('.node, .flow-card').forEach(el => el.classList.remove('active'));
+  const el = document.querySelector(`[data-node="${key}"], [data-flow="${key}"]`);
+  if (el) el.classList.add('active');
+
+  document.getElementById('panel-icon').textContent  = node.icon;
+  document.getElementById('panel-title').textContent = node.title;
+  document.getElementById('panel-sub').textContent   = node.sub;
+  document.getElementById('panel-body').innerHTML    = node.content;
+
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('main').classList.add('panel-open');
+  activeNode = key;
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('main').classList.remove('panel-open');
+  document.querySelectorAll('.node, .flow-card').forEach(el => el.classList.remove('active'));
+  activeNode = null;
+}
+
+// close on Escape
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+</script>
+
+</body>
+</html>

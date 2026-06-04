@@ -1,0 +1,80 @@
+{
+  "tasks": [
+    {
+      "id": "s1",
+      "title": "Redesign dashboard layout",
+      "description": "Update admin panel with new design system",
+      "project": "frontend",
+      "status": "inprogress",
+      "priority": "high",
+      "dueDate": "2026-06-10",
+      "assignee": "t1",
+      "isClientRequest": false,
+      "createdAt": "2026-06-04T00:00:00.000Z"
+    },
+    {
+      "id": "s2",
+      "title": "Auth API migration",
+      "description": "Move from JWT to session-based auth",
+      "project": "backend",
+      "status": "backlog",
+      "priority": "critical",
+      "dueDate": "2026-06-15",
+      "assignee": "t2",
+      "isClientRequest": false,
+      "createdAt": "2026-06-04T00:00:00.000Z"
+    },
+    {
+      "id": "s3",
+      "title": "Fix push notifications on Android 13",
+      "description": "Notifications not showing on Android 13+ devices",
+      "project": "mobile",
+      "status": "review",
+      "priority": "high",
+      "dueDate": "2026-06-08",
+      "assignee": "t1",
+      "isClientRequest": false,
+      "createdAt": "2026-06-04T00:00:00.000Z"
+    },
+    {
+      "id": "s4",
+      "title": "Add dark mode support",
+      "description": "System-aware dark mode across the mobile app",
+      "project": "mobile",
+      "status": "backlog",
+      "priority": "medium",
+      "dueDate": "",
+      "assignee": "",
+      "isClientRequest": false,
+      "createdAt": "2026-06-04T00:00:00.000Z"
+    },
+    {
+      "id": "s5",
+      "title": "Database connection pooling",
+      "description": "Optimise pool size for common server under load",
+      "project": "backend",
+      "status": "done",
+      "priority": "medium",
+      "dueDate": "2026-06-01",
+      "assignee": "t2",
+      "isClientRequest": false,
+      "createdAt": "2026-06-04T00:00:00.000Z"
+    }
+  ],
+  "team": [
+    {
+      "id": "t1",
+      "name": "Jay Debnath",
+      "role": "Tech Lead",
+      "color": "#539bf5",
+      "initials": "JD"
+    },
+    {
+      "id": "t2",
+      "name": "Team Member",
+      "role": "Developer",
+      "color": "#57ab5a",
+      "initials": "TM"
+    }
+  ]
+}

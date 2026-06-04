@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dtech Platform — Database Schema</title>
+<style>
+  :root {
+    --bg: #f6f8fa;
+    --surface: #ffffff;
+    --surface2: #f6f8fa;
+    --surface3: #eaeef2;
+    --border: #d0d7de;
+    --text: #1f2328;
+    --text-muted: #57606a;
+    --accent-blue: #0969da;
+    --accent-green: #1a7f37;
+    --accent-orange: #9a6700;
+    --accent-purple: #8250df;
+    --accent-red: #cf222e;
+    --accent-teal: #0e7490;
+    --panel-w: 460px;
+
+    --grp-catalogue: #0969da;
+    --grp-vendor:    #9a6700;
+    --grp-orders:    #8250df;
+    --grp-customer:  #1a7f37;
+    --grp-support:   #cf222e;
+    --grp-driver:    #0e7490;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px;
+    overflow-x: hidden;
+  }
+
+  /* ── NAV ── */
+  .topnav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 28px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topnav-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent-blue);
+    text-decoration: none;
+  }
+  .topnav-brand .dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.4)} }
+  .topnav-links { display: flex; gap: 6px; }
+  .topnav-links a {
+    padding: 6px 14px; border-radius: 6px;
+    color: var(--text-muted); text-decoration: none;
+    font-size: 13px; transition: background .15s, color .15s;
+  }
+  .topnav-links a:hover, .topnav-links a.active {
+    background: var(--surface2); color: var(--text);
+  }
+
+  /* ── LAYOUT ── */
+  .layout {
+    display: flex;
+    height: calc(100vh - 53px);
+  }
+
+  /* ── LEFT SIDEBAR ── */
+  .sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 16px 0;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .sidebar-group { margin-bottom: 6px; }
+  .sidebar-group-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 8px 16px 4px;
+  }
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 16px;
+    cursor: pointer;
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: background .12s, color .12s;
+    border-left: 3px solid transparent;
+  }
+  .sidebar-item:hover {
+    background: var(--surface2);
+    color: var(--text);
+  }
+  .sidebar-item.active {
+    background: rgba(9,105,218,.06);
+    color: var(--accent-blue);
+    border-left-color: var(--accent-blue);
+    font-weight: 600;
+  }
+  .sidebar-item .tbl-dot {
+    width: 8px; height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .sidebar-item .col-count {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1px 6px;
+  }
+
+  /* ── MAIN CANVAS ── */
+  .canvas {
+    flex: 1;
+    overflow: auto;
+    padding: 24px 28px;
+    transition: margin-right .25s;
+    position: relative;
+  }
+  .canvas.panel-open { margin-right: var(--panel-w); }
+  .canvas::-webkit-scrollbar { width: 6px; height: 6px; }
+  .canvas::-webkit-scrollbar-track { background: transparent; }
+  .canvas::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  .canvas-header { margin-bottom: 24px; }
+  .canvas-header h1 { font-size: 22px; font-weight: 700; margin-bottom: 4px; }
+  .canvas-header p { color: var(--text-muted); font-size: 13px; }
+
+  /* ── FILTER PILLS ── */
+  .filter-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 24px;
+  }
+  .filter-pill {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .filter-pill .pill-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+  .filter-pill:hover { border-color: var(--accent-blue); color: var(--text); }
+  .filter-pill.active { background: var(--accent-blue); border-color: var(--accent-blue); color: #fff; }
+  .filter-pill.active .pill-dot { background: rgba(255,255,255,.8) !important; }
+
+  /* ── ER DIAGRAM GROUPS ── */
+  .er-diagram {
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .er-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .er-group.hidden { display: none; }
+
+  .er-group-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  .er-group-line {
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+  .er-group-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    padding: 3px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .er-group-label .gl-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  .er-tables-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+  }
+
+  /* ── TABLE CARD ── */
+  .tbl-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    width: 230px;
+    cursor: pointer;
+    transition: border-color .15s, box-shadow .15s, transform .12s;
+    position: relative;
+    overflow: hidden;
+  }
+  .tbl-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .tbl-card:hover {
+    border-color: var(--accent-blue);
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    transform: translateY(-2px);
+  }
+  .tbl-card.active {
+    border-color: var(--accent-blue);
+    box-shadow: 0 0 0 3px rgba(9,105,218,.12);
+  }
+
+  .tbl-card-head {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+  .tbl-name {
+    font-size: 13px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: var(--text);
+  }
+  .tbl-owner {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .owner-common   { background: rgba(9,105,218,.1);  color: var(--accent-blue);   border: 1px solid rgba(9,105,218,.2);  }
+  .owner-mobile   { background: rgba(26,127,55,.1);  color: var(--accent-green);  border: 1px solid rgba(26,127,55,.2);  }
+
+  .tbl-card-body {
+    padding: 8px 14px 12px;
+  }
+  .tbl-col-preview {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .tbl-col-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+  }
+  .tbl-col-name {
+    color: var(--text-muted);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .tbl-col-name.pk { color: var(--accent-orange); font-weight: 700; }
+  .tbl-col-name.fk { color: var(--accent-blue); }
+  .pk-icon, .fk-icon {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .pk-icon { background: rgba(154,103,0,.1);  color: var(--accent-orange); border: 1px solid rgba(154,103,0,.2);  }
+  .fk-icon { background: rgba(9,105,218,.1);  color: var(--accent-blue);   border: 1px solid rgba(9,105,218,.2);  }
+  .tbl-more {
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--text-muted);
+    font-style: italic;
+  }
+
+  .tbl-card-foot {
+    padding: 7px 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tbl-foot-stat {
+    font-size: 11px;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .tbl-click-hint {
+    font-size: 10px;
+    color: var(--accent-blue);
+    font-weight: 500;
+  }
+
+  /* FK relationship chips on cards */
+  .fk-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 0 14px 10px;
+  }
+  .fk-chip {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: rgba(9,105,218,.08);
+    color: var(--accent-blue);
+    border: 1px solid rgba(9,105,218,.2);
+    font-family: 'SF Mono', monospace;
+    cursor: pointer;
+    transition: background .12s;
+  }
+  .fk-chip:hover { background: rgba(9,105,218,.15); }
+
+  /* ── SIDE PANEL ── */
+  .panel {
+    position: fixed;
+    top: 53px; right: 0;
+    width: var(--panel-w);
+    height: calc(100vh - 53px);
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    z-index: 200;
+    transform: translateX(100%);
+    transition: transform .25s cubic-bezier(.4,0,.2,1);
+    display: flex;
+    flex-direction: column;
+  }
+  .panel.open { transform: translateX(0); }
+
+  .panel-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-shrink: 0;
+    background: var(--surface2);
+  }
+  .panel-header-left { display: flex; align-items: flex-start; gap: 12px; }
+  .panel-tbl-icon {
+    width: 40px; height: 40px;
+    border-radius: 8px;
+    background: rgba(9,105,218,.1);
+    border: 1px solid rgba(9,105,218,.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .panel-tbl-name {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    margin-bottom: 3px;
+  }
+  .panel-tbl-sub { font-size: 12px; color: var(--text-muted); }
+  .panel-close {
+    background: none; border: 1px solid var(--border);
+    color: var(--text-muted); width: 28px; height: 28px;
+    border-radius: 6px; cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background .15s; flex-shrink: 0;
+  }
+  .panel-close:hover { background: var(--surface3); color: var(--text); }
+
+  .panel-body {
+    flex: 1; overflow-y: auto; padding: 0;
+  }
+  .panel-body::-webkit-scrollbar { width: 4px; }
+  .panel-body::-webkit-scrollbar-track { background: transparent; }
+  .panel-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* column table */
+  .col-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .col-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text-muted);
+    letter-spacing: .05em;
+    text-transform: uppercase;
+    z-index: 1;
+  }
+  .col-table tbody tr {
+    border-bottom: 1px solid var(--surface2);
+    transition: background .1s;
+    cursor: default;
+  }
+  .col-table tbody tr:hover { background: var(--surface2); }
+  .col-table tbody tr.pk-row { background: rgba(154,103,0,.04); }
+  .col-table tbody tr.fk-row { background: rgba(9,105,218,.03); }
+  .col-table td {
+    padding: 9px 12px;
+    font-size: 12px;
+    vertical-align: top;
+  }
+
+  .col-name-cell {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .col-type-cell {
+    color: var(--accent-purple);
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+  }
+  .col-notes-cell { color: var(--text-muted); }
+
+  .badge-pk { display:inline-block; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:700; background:rgba(154,103,0,.1);  color:var(--accent-orange); border:1px solid rgba(154,103,0,.2);  }
+  .badge-fk { display:inline-block; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:700; background:rgba(9,105,218,.1);  color:var(--accent-blue);   border:1px solid rgba(9,105,218,.2);  }
+  .badge-nn { display:inline-block; padding:1px 5px; border-radius:3px; font-size:9px; font-weight:700; background:rgba(207,34,46,.08); color:var(--accent-red);    border:1px solid rgba(207,34,46,.18); }
+
+  .panel-section {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .ps-title {
+    font-size: 10px; font-weight: 700;
+    letter-spacing: .1em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 10px;
+  }
+
+  .rel-list { display:flex; flex-direction:column; gap:8px; }
+  .rel-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+  }
+  .rel-arrow {
+    color: var(--text-muted);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .rel-label { color: var(--text-muted); }
+  .rel-target {
+    font-family: 'SF Mono', monospace;
+    color: var(--accent-blue);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .rel-target:hover { color: var(--accent-purple); }
+
+  code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 11px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: var(--accent-blue);
+  }
+
+  /* stats strip */
+  .stats-strip {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .stat-cell {
+    flex: 1;
+    padding: 12px 14px;
+    text-align: center;
+    border-right: 1px solid var(--border);
+  }
+  .stat-cell:last-child { border-right: none; }
+  .stat-val { font-size: 20px; font-weight: 700; color: var(--text); }
+  .stat-lbl { font-size: 10px; color: var(--text-muted); margin-top: 2px; }
+
+  .enum-values {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 3px;
+  }
+  .enum-val {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: rgba(130,80,223,.08);
+    color: var(--accent-purple);
+    border: 1px solid rgba(130,80,223,.2);
+    font-family: monospace;
+  }
+
+  @media (max-width: 900px) {
+    .sidebar { display: none; }
+    .canvas.panel-open { margin-right: 0; }
+    .panel { width: 100vw; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topnav">
+  <a href="index.html" class="topnav-brand">
+    <img src="logo.png" alt="D Tech Creative" style="height:32px;width:auto" />
+  </a>
+  <div class="topnav-links">
+    <a href="index.html">Architecture</a>
+    <a href="flows.html">Data Flows</a>
+    <a href="database.html" class="active">Database</a>
+    <a href="api-common.html">API (Common)</a>
+    <a href="api-mobile.html">API (Mobile)</a>
+    <a href="tracker.html" target="_blank">Tracker</a>
+  </div>
+</nav>
+
+<div class="layout">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Catalogue</div>
+      <div class="sidebar-item" onclick="selectTable('products')" data-table="products">
+        <div class="tbl-dot" style="background:var(--grp-catalogue)"></div> products
+        <span class="col-count">14</span>
+      </div>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Vendor & Warehouse</div>
+      <div class="sidebar-item" onclick="selectTable('vendors')" data-table="vendors">
+        <div class="tbl-dot" style="background:var(--grp-vendor)"></div> vendors
+        <span class="col-count">20</span>
+      </div>
+      <div class="sidebar-item" onclick="selectTable('warehouses')" data-table="warehouses">
+        <div class="tbl-dot" style="background:var(--grp-vendor)"></div> warehouses
+        <span class="col-count">11</span>
+      </div>
+      <div class="sidebar-item" onclick="selectTable('inventories')" data-table="inventories">
+        <div class="tbl-dot" style="background:var(--grp-vendor)"></div> inventories
+        <span class="col-count">8</span>
+      </div>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Vendor Orders</div>
+      <div class="sidebar-item" onclick="selectTable('order_details')" data-table="order_details">
+        <div class="tbl-dot" style="background:var(--grp-orders)"></div> order_details
+        <span class="col-count">8</span>
+      </div>
+      <div class="sidebar-item" onclick="selectTable('order_products')" data-table="order_products">
+        <div class="tbl-dot" style="background:var(--grp-orders)"></div> order_products
+        <span class="col-count">10</span>
+      </div>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Customer Orders</div>
+      <div class="sidebar-item" onclick="selectTable('customer_orders')" data-table="customer_orders">
+        <div class="tbl-dot" style="background:var(--grp-customer)"></div> customer_orders
+        <span class="col-count">9</span>
+      </div>
+      <div class="sidebar-item" onclick="selectTable('customer_order_items')" data-table="customer_order_items">
+        <div class="tbl-dot" style="background:var(--grp-customer)"></div> customer_order_items
+        <span class="col-count">7</span>
+      </div>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Vendor Support</div>
+      <div class="sidebar-item" onclick="selectTable('service_records')" data-table="service_records">
+        <div class="tbl-dot" style="background:var(--grp-support)"></div> service_records
+        <span class="col-count">7</span>
+      </div>
+      <div class="sidebar-item" onclick="selectTable('sr_attachments')" data-table="sr_attachments">
+        <div class="tbl-dot" style="background:var(--grp-support)"></div> sr_attachments
+        <span class="col-count">3</span>
+      </div>
+    </div>
+    <div class="sidebar-group">
+      <div class="sidebar-group-label">Driver Support</div>
+      <div class="sidebar-item" onclick="selectTable('driver_support_tickets')" data-table="driver_support_tickets">
+        <div class="tbl-dot" style="background:var(--grp-driver)"></div> driver_support_tickets
+        <span class="col-count">6</span>
+      </div>
+      <div class="sidebar-item" onclick="selectTable('driver_ticket_attachments')" data-table="driver_ticket_attachments">
+        <div class="tbl-dot" style="background:var(--grp-driver)"></div> driver_ticket_attachments
+        <span class="col-count">3</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- CANVAS -->
+  <main class="canvas" id="canvas">
+
+    <div class="canvas-header">
+      <h1>Database Schema</h1>
+      <p>12 tables across 2 backends — one shared MySQL database. Click any table for column details & relationships.</p>
+    </div>
+
+    <!-- FILTER -->
+    <div class="filter-row">
+      <button class="filter-pill active" onclick="filterGroup('all', this)">
+        All tables
+      </button>
+      <button class="filter-pill" onclick="filterGroup('catalogue', this)">
+        <span class="pill-dot" style="background:var(--grp-catalogue)"></span> Catalogue
+      </button>
+      <button class="filter-pill" onclick="filterGroup('vendor-warehouse', this)">
+        <span class="pill-dot" style="background:var(--grp-vendor)"></span> Vendor &amp; Warehouse
+      </button>
+      <button class="filter-pill" onclick="filterGroup('vendor-orders', this)">
+        <span class="pill-dot" style="background:var(--grp-orders)"></span> Vendor Orders
+      </button>
+      <button class="filter-pill" onclick="filterGroup('customer-orders', this)">
+        <span class="pill-dot" style="background:var(--grp-customer)"></span> Customer Orders
+      </button>
+      <button class="filter-pill" onclick="filterGroup('support', this)">
+        <span class="pill-dot" style="background:var(--grp-support)"></span> Support
+      </button>
+    </div>
+
+    <!-- ER DIAGRAM -->
+    <div class="er-diagram">
+
+      <!-- GROUP: CATALOGUE -->
+      <div class="er-group" data-group="catalogue">
+        <div class="er-group-header">
+          <div class="er-group-line"></div>
+          <div class="er-group-label" style="color:var(--grp-catalogue)">
+            <span class="gl-dot" style="background:var(--grp-catalogue)"></span>
+            Catalogue
+          </div>
+          <div class="er-group-line"></div>
+        </div>
+        <div class="er-tables-row">
+
+          <div class="tbl-card" id="card-products" style="--accent: var(--grp-catalogue)" onclick="selectTable('products')">
+            <div style="height:3px;background:var(--grp-catalogue);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">products</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">product_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">name, description, category</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">price, offer_price, is_active</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">sku, brand, unit, unit_size</span></div>
+              </div>
+              <div class="tbl-more">+ 6 more columns</div>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">14 columns</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- GROUP: VENDOR & WAREHOUSE -->
+      <div class="er-group" data-group="vendor-warehouse">
+        <div class="er-group-header">
+          <div class="er-group-line"></div>
+          <div class="er-group-label" style="color:var(--grp-vendor)">
+            <span class="gl-dot" style="background:var(--grp-vendor)"></span>
+            Vendor &amp; Warehouse
+          </div>
+          <div class="er-group-line"></div>
+        </div>
+        <div class="er-tables-row">
+
+          <div class="tbl-card" id="card-warehouses" onclick="selectTable('warehouses')">
+            <div style="height:3px;background:var(--grp-vendor);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">warehouses</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">warehouse_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">name, address_line1/2</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">city, state, postal_code</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">latitude, longitude</span></div>
+              </div>
+              <div class="tbl-more">+ 3 more columns</div>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">11 columns</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+          <div class="tbl-card" id="card-vendors" onclick="selectTable('vendors')">
+            <div style="height:3px;background:var(--grp-vendor);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">vendors</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">vendor_id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">warehouse_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">name, email, phone</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">isDocumentVerified, isActive</span></div>
+              </div>
+              <div class="tbl-more">+ 14 more columns</div>
+            </div>
+            <div class="fk-chips">
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('warehouses')">→ warehouses</span>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">20 columns · 1 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+          <div class="tbl-card" id="card-inventories" onclick="selectTable('inventories')">
+            <div style="height:3px;background:var(--grp-vendor);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">inventories</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">inventory_id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">warehouse_id, vendor_id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">product_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">quantity, price, offer_price</span></div>
+              </div>
+            </div>
+            <div class="fk-chips">
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('warehouses')">→ warehouses</span>
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('vendors')">→ vendors</span>
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('products')">→ products</span>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">8 columns · 3 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- GROUP: VENDOR ORDERS -->
+      <div class="er-group" data-group="vendor-orders">
+        <div class="er-group-header">
+          <div class="er-group-line"></div>
+          <div class="er-group-label" style="color:var(--grp-orders)">
+            <span class="gl-dot" style="background:var(--grp-orders)"></span>
+            Vendor Orders
+          </div>
+          <div class="er-group-line"></div>
+        </div>
+        <div class="er-tables-row">
+
+          <div class="tbl-card" id="card-order_details" onclick="selectTable('order_details')">
+            <div style="height:3px;background:var(--grp-orders);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">order_details</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">order_id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">vendor_id, warehouse_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">order_status (ENUM)</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">product_status (ENUM)</span></div>
+              </div>
+            </div>
+            <div class="fk-chips">
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('vendors')">→ vendors</span>
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('warehouses')">→ warehouses</span>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">8 columns · 2 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+          <div class="tbl-card" id="card-order_products" onclick="selectTable('order_products')">
+            <div style="height:3px;background:var(--grp-orders);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">order_products</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">order_id, product_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">requested_quantity</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">product_name, sku (snapshot)</span></div>
+              </div>
+              <div class="tbl-more">+ 4 more columns</div>
+            </div>
+            <div class="fk-chips">
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('order_details')">→ order_details</span>
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('products')">→ products</span>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">10 columns · 2 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- GROUP: CUSTOMER ORDERS -->
+      <div class="er-group" data-group="customer-orders">
+        <div class="er-group-header">
+          <div class="er-group-line"></div>
+          <div class="er-group-label" style="color:var(--grp-customer)">
+            <span class="gl-dot" style="background:var(--grp-customer)"></span>
+            Customer Orders <span style="font-weight:400;font-size:10px;margin-left:4px">(owned by dtechmobileapp)</span>
+          </div>
+          <div class="er-group-line"></div>
+        </div>
+        <div class="er-tables-row">
+
+          <div class="tbl-card" id="card-customer_orders" onclick="selectTable('customer_orders')">
+            <div style="height:3px;background:var(--grp-customer);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">customer_orders</div>
+              <span class="tbl-owner owner-mobile">mobileapp</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">order_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">customer_id, total_amount</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">order_status (ENUM)</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">payment_status, payment_method</span></div>
+              </div>
+              <div class="tbl-more">+ 3 more columns</div>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">9 columns</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+          <div class="tbl-card" id="card-customer_order_items" onclick="selectTable('customer_order_items')">
+            <div style="height:3px;background:var(--grp-customer);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">customer_order_items</div>
+              <span class="tbl-owner owner-mobile">mobileapp</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">item_id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">order_id, vendor_id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">product_id, inventory_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">quantity, price_at_purchase</span></div>
+              </div>
+            </div>
+            <div class="fk-chips">
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('customer_orders')">→ customer_orders</span>
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('vendors')">→ vendors</span>
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('products')">→ products</span>
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('inventories')">→ inventories</span>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">7 columns · 4 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- GROUP: SUPPORT -->
+      <div class="er-group" data-group="support">
+        <div class="er-group-header">
+          <div class="er-group-line"></div>
+          <div class="er-group-label" style="color:var(--grp-support)">
+            <span class="gl-dot" style="background:var(--grp-support)"></span>
+            Vendor Support
+          </div>
+          <div class="er-group-line"></div>
+        </div>
+        <div class="er-tables-row">
+
+          <div class="tbl-card" id="card-service_records" onclick="selectTable('service_records')">
+            <div style="height:3px;background:var(--grp-support);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">service_records</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">ticket_number</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">vendor_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">status (ENUM), agent_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">created_at, resolved_at</span></div>
+              </div>
+            </div>
+            <div class="fk-chips">
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('vendors')">→ vendors</span>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">7 columns · 1 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+          <div class="tbl-card" id="card-sr_attachments" onclick="selectTable('sr_attachments')">
+            <div style="height:3px;background:var(--grp-support);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">sr_attachments</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">attachment_id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">ticket_number</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">file_url</span></div>
+              </div>
+            </div>
+            <div class="fk-chips">
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('service_records')">→ service_records</span>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">3 columns · 1 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+          <div class="tbl-card" id="card-driver_support_tickets" onclick="selectTable('driver_support_tickets')">
+            <div style="height:3px;background:var(--grp-driver);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">driver_support_tickets</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">ticket_number</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">driver_id</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">subject, description</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">status (ENUM), created_at</span></div>
+              </div>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">6 columns · 1 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+          <div class="tbl-card" id="card-driver_ticket_attachments" onclick="selectTable('driver_ticket_attachments')">
+            <div style="height:3px;background:var(--grp-driver);border-radius:10px 10px 0 0"></div>
+            <div class="tbl-card-head">
+              <div class="tbl-name">driver_ticket_attachments</div>
+              <span class="tbl-owner owner-common">commonserver</span>
+            </div>
+            <div class="tbl-card-body">
+              <div class="tbl-col-preview">
+                <div class="tbl-col-row"><span class="pk-icon">PK</span><span class="tbl-col-name pk">attachment_id</span></div>
+                <div class="tbl-col-row"><span class="fk-icon">FK</span><span class="tbl-col-name fk">ticket_number</span></div>
+                <div class="tbl-col-row"><span class="tbl-col-name">file_url</span></div>
+              </div>
+            </div>
+            <div class="fk-chips">
+              <span class="fk-chip" onclick="event.stopPropagation();selectTable('driver_support_tickets')">→ driver_support_tickets</span>
+            </div>
+            <div class="tbl-card-foot">
+              <span class="tbl-foot-stat">3 columns · 1 FK</span>
+              <span class="tbl-click-hint">View details →</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div><!-- /er-diagram -->
+  </main><!-- /canvas -->
+
+</div><!-- /layout -->
+
+<!-- SIDE PANEL -->
+<div class="panel" id="panel">
+  <div class="panel-header">
+    <div class="panel-header-left">
+      <div class="panel-tbl-icon" id="panel-icon">🗄️</div>
+      <div>
+        <div class="panel-tbl-name" id="panel-name">table_name</div>
+        <div class="panel-tbl-sub" id="panel-sub">subtitle</div>
+      </div>
+    </div>
+    <button class="panel-close" onclick="closePanel()">✕</button>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</div>
+
+<script>
+const TABLES = {
+
+  products: {
+    name: 'products',
+    icon: '📦',
+    owner: 'dtechcommonserver',
+    desc: 'Product catalogue. Shared — read by both backends.',
+    columns: [
+      { name:'product_id',   type:'INT',      pk:true,  notes:'Auto-increment primary key' },
+      { name:'name',         type:'VARCHAR',  nn:true,  notes:'Product name' },
+      { name:'description',  type:'TEXT',               notes:'Full product description' },
+      { name:'category',     type:'VARCHAR',            notes:'Category name' },
+      { name:'unit',         type:'VARCHAR',            notes:'e.g. kg, litre, piece' },
+      { name:'image_url',    type:'VARCHAR',            notes:'Product image path' },
+      { name:'price',        type:'DECIMAL',  nn:true,  notes:'Base price' },
+      { name:'offer_price',  type:'DECIMAL',            notes:'Discounted price (nullable)' },
+      { name:'is_active',    type:'BOOLEAN',  nn:true,  notes:'Visibility flag for customers' },
+      { name:'sku',          type:'VARCHAR',            notes:'Stock Keeping Unit' },
+      { name:'brand',        type:'VARCHAR',            notes:'Brand name' },
+      { name:'tags',         type:'VARCHAR',            notes:'Comma-separated search tags' },
+      { name:'unit_size',    type:'VARCHAR',            notes:'e.g. 500ml, 1kg' },
+      { name:'expiry_date',  type:'DATE',               notes:'Product expiry' },
+      { name:'created_at',   type:'DATETIME',           notes:'Row creation timestamp' },
+    ],
+    relations: [
+      { type:'referenced by', col:'inventory_id', target:'inventories', targetCol:'product_id', desc:'Every inventory entry references a product' },
+      { type:'referenced by', col:'product_id',   target:'order_products', targetCol:'product_id', desc:'Vendor order line items snapshot product data' },
+      { type:'referenced by', col:'product_id',   target:'customer_order_items', targetCol:'product_id', desc:'Customer order items reference product' },
+    ]
+  },
+
+  vendors: {
+    name: 'vendors',
+    icon: '🏪',
+    owner: 'dtechcommonserver',
+    desc: 'Vendor business accounts. Requires document verification by admin.',
+    columns: [
+      { name:'vendor_id',            type:'INT',      pk:true,  notes:'Auto-increment primary key' },
+      { name:'name',                 type:'VARCHAR',  nn:true,  notes:'Business name' },
+      { name:'business_owner_name',  type:'VARCHAR',            notes:'Owner full name' },
+      { name:'password',             type:'VARCHAR',  nn:true,  notes:'Bcrypt hashed password' },
+      { name:'email',                type:'VARCHAR',            notes:'Contact email' },
+      { name:'phone',                type:'VARCHAR',  nn:true,  notes:'Primary phone number' },
+      { name:'address_line1',        type:'VARCHAR',            notes:'Street address' },
+      { name:'city',                 type:'VARCHAR',            notes:'City' },
+      { name:'state',                type:'VARCHAR',            notes:'State' },
+      { name:'postal_code',          type:'VARCHAR',            notes:'PIN / ZIP code' },
+      { name:'latitude',             type:'DECIMAL',            notes:'GPS latitude' },
+      { name:'longitude',            type:'DECIMAL',            notes:'GPS longitude' },
+      { name:'gstId',                type:'VARCHAR',            notes:'GST registration number' },
+      { name:'gstFile',              type:'VARCHAR',            notes:'File path to GST document' },
+      { name:'tradeLicenseFile',     type:'VARCHAR',            notes:'File path to trade licence' },
+      { name:'isDocumentVerified',   type:'BOOLEAN',  nn:true,  notes:'Set true by admin on approval' },
+      { name:'isActive',             type:'BOOLEAN',  nn:true,  notes:'Account active flag' },
+      { name:'remarks',              type:'TEXT',               notes:'Admin notes / rejection reason' },
+      { name:'warehouse_id',         type:'INT',      fk:true,  notes:'FK → warehouses.warehouse_id' },
+      { name:'created_at',           type:'DATETIME',           notes:'Row creation timestamp' },
+    ],
+    relations: [
+      { type:'belongs to',    col:'warehouse_id', target:'warehouses', targetCol:'warehouse_id', desc:'Vendor is assigned to a warehouse' },
+      { type:'referenced by', col:'vendor_id',    target:'inventories', targetCol:'vendor_id', desc:'Vendor owns inventory entries' },
+      { type:'referenced by', col:'vendor_id',    target:'order_details', targetCol:'vendor_id', desc:'Vendor creates restock orders' },
+      { type:'referenced by', col:'vendor_id',    target:'service_records', targetCol:'vendor_id', desc:'Vendor raises support tickets' },
+      { type:'referenced by', col:'vendor_id',    target:'customer_order_items', targetCol:'vendor_id', desc:'Customer items track which vendor sold the product' },
+    ]
+  },
+
+  warehouses: {
+    name: 'warehouses',
+    icon: '🏭',
+    owner: 'dtechcommonserver',
+    desc: 'Physical warehouse / distribution centre locations.',
+    columns: [
+      { name:'warehouse_id',  type:'INT',      pk:true, notes:'Auto-increment primary key' },
+      { name:'name',          type:'VARCHAR',  nn:true, notes:'Warehouse name' },
+      { name:'address_line1', type:'VARCHAR',           notes:'Street address' },
+      { name:'address_line2', type:'VARCHAR',           notes:'Floor / suite' },
+      { name:'city',          type:'VARCHAR',           notes:'City' },
+      { name:'state',         type:'VARCHAR',           notes:'State' },
+      { name:'postal_code',   type:'VARCHAR',           notes:'PIN / ZIP' },
+      { name:'country',       type:'VARCHAR',           notes:'Country' },
+      { name:'latitude',      type:'DECIMAL',           notes:'GPS latitude' },
+      { name:'longitude',     type:'DECIMAL',           notes:'GPS longitude' },
+      { name:'status',        type:'ENUM',              enumVals:['active','inactive'], notes:'Operational status' },
+      { name:'created_at',    type:'DATETIME',          notes:'Row creation timestamp' },
+    ],
+    relations: [
+      { type:'referenced by', col:'warehouse_id', target:'vendors',       targetCol:'warehouse_id', desc:'Vendors are assigned to warehouses' },
+      { type:'referenced by', col:'warehouse_id', target:'inventories',   targetCol:'warehouse_id', desc:'Stock is held at warehouses' },
+      { type:'referenced by', col:'warehouse_id', target:'order_details', targetCol:'warehouse_id', desc:'Restock orders target a warehouse' },
+    ]
+  },
+
+  inventories: {
+    name: 'inventories',
+    icon: '📊',
+    owner: 'dtechcommonserver',
+    desc: 'Stock levels per product per vendor per warehouse. Junction table with quantity & pricing.',
+    columns: [
+      { name:'inventory_id',  type:'INT',      pk:true,  notes:'Auto-increment primary key' },
+      { name:'warehouse_id',  type:'INT',      fk:true,  notes:'FK → warehouses.warehouse_id' },
+      { name:'product_id',    type:'INT',      fk:true,  notes:'FK → products.product_id' },
+      { name:'vendor_id',     type:'INT',      fk:true,  notes:'FK → vendors.vendor_id' },
+      { name:'quantity',      type:'INT',      nn:true,  notes:'Current stock count' },
+      { name:'price',         type:'DECIMAL',  nn:true,  notes:'Vendor selling price' },
+      { name:'offer_price',   type:'DECIMAL',            notes:'Discounted price (nullable)' },
+      { name:'expiry_date',   type:'DATE',               notes:'Batch expiry date' },
+      { name:'last_updated',  type:'DATETIME',           notes:'Last stock update timestamp' },
+    ],
+    relations: [
+      { type:'belongs to', col:'warehouse_id', target:'warehouses', targetCol:'warehouse_id', desc:'Stock is located at this warehouse' },
+      { type:'belongs to', col:'product_id',   target:'products',   targetCol:'product_id',   desc:'Which product this stock is for' },
+      { type:'belongs to', col:'vendor_id',    target:'vendors',    targetCol:'vendor_id',    desc:'Which vendor owns this stock' },
+      { type:'referenced by', col:'inventory_id', target:'customer_order_items', targetCol:'inventory_id', desc:'Order items reference inventory to lock price' },
+    ]
+  },
+
+  order_details: {
+    name: 'order_details',
+    icon: '📋',
+    owner: 'dtechcommonserver',
+    desc: 'Vendor → Warehouse restock orders. Top-level order record.',
+    columns: [
+      { name:'order_id',       type:'INT',      pk:true, notes:'Auto-increment primary key' },
+      { name:'vendor_id',      type:'INT',      fk:true, notes:'FK → vendors.vendor_id' },
+      { name:'warehouse_id',   type:'INT',      fk:true, notes:'FK → warehouses.warehouse_id' },
+      { name:'type',           type:'VARCHAR',           notes:'Order type identifier' },
+      { name:'order_status',   type:'ENUM',              enumVals:['pending','approved','rejected','cancelled'], notes:'Approval lifecycle' },
+      { name:'product_status', type:'ENUM',              enumVals:['processing','ready','dispatched'], notes:'Fulfilment status' },
+      { name:'remarks',        type:'TEXT',              notes:'Admin notes on approval/rejection' },
+      { name:'created_at',     type:'DATETIME',          notes:'Order creation timestamp' },
+    ],
+    relations: [
+      { type:'belongs to',    col:'vendor_id',    target:'vendors',        targetCol:'vendor_id',    desc:'Which vendor placed the order' },
+      { type:'belongs to',    col:'warehouse_id', target:'warehouses',     targetCol:'warehouse_id', desc:'Which warehouse fulfils the order' },
+      { type:'referenced by', col:'order_id',     target:'order_products', targetCol:'order_id',     desc:'Order line items' },
+    ]
+  },
+
+  order_products: {
+    name: 'order_products',
+    icon: '🛒',
+    owner: 'dtechcommonserver',
+    desc: 'Line items of a vendor restock order. Snapshots product data at order time to protect history.',
+    columns: [
+      { name:'id',                 type:'INT',      pk:true, notes:'Auto-increment primary key' },
+      { name:'order_id',           type:'INT',      fk:true, notes:'FK → order_details.order_id' },
+      { name:'product_id',         type:'INT',      fk:true, notes:'FK → products.product_id' },
+      { name:'requested_quantity', type:'INT',      nn:true, notes:'Units requested' },
+      { name:'product_name',       type:'VARCHAR',           notes:'Snapshot at order time' },
+      { name:'product_brand',      type:'VARCHAR',           notes:'Snapshot at order time' },
+      { name:'product_sku',        type:'VARCHAR',           notes:'Snapshot at order time' },
+      { name:'product_price',      type:'DECIMAL',           notes:'Snapshot at order time' },
+      { name:'unit_size',          type:'VARCHAR',           notes:'Snapshot at order time' },
+      { name:'expiry_date',        type:'DATE',              notes:'Snapshot at order time' },
+      { name:'created_at',         type:'DATETIME',          notes:'Row creation timestamp' },
+    ],
+    relations: [
+      { type:'belongs to', col:'order_id',   target:'order_details', targetCol:'order_id',   desc:'Parent order' },
+      { type:'belongs to', col:'product_id', target:'products',      targetCol:'product_id', desc:'Which product was ordered (live reference, snapshot columns for history)' },
+    ]
+  },
+
+  customer_orders: {
+    name: 'customer_orders',
+    icon: '🧾',
+    owner: 'dtechmobileapp',
+    desc: 'Customer purchase orders. Created and owned by dtechmobileapp but readable by dtechcommonserver via shared MySQL.',
+    columns: [
+      { name:'order_id',           type:'INT',      pk:true, notes:'Auto-increment primary key' },
+      { name:'customer_id',        type:'INT',      nn:true, notes:'FK to customers table' },
+      { name:'total_amount',       type:'DECIMAL',  nn:true, notes:'Order total in INR' },
+      { name:'order_status',       type:'ENUM',              enumVals:['CREATED','PENDING','CONFIRMED','DELIVERED','CANCELLED'], notes:'Order lifecycle status' },
+      { name:'payment_status',     type:'ENUM',              enumVals:['UNPAID','PAID','REFUNDED'], notes:'Razorpay payment status' },
+      { name:'payment_method',     type:'VARCHAR',           notes:'razorpay or COD' },
+      { name:'shipping_address_id',type:'INT',               notes:'FK to addresses table' },
+      { name:'remarks',            type:'TEXT',              notes:'Notes / special instructions' },
+      { name:'created_at',         type:'DATETIME',          notes:'Order placement timestamp' },
+    ],
+    relations: [
+      { type:'referenced by', col:'order_id', target:'customer_order_items', targetCol:'order_id', desc:'Order line items' },
+    ]
+  },
+
+  customer_order_items: {
+    name: 'customer_order_items',
+    icon: '🏷️',
+    owner: 'dtechmobileapp',
+    desc: 'Individual line items in a customer order. References vendor, product, and inventory to lock price at purchase.',
+    columns: [
+      { name:'item_id',           type:'INT',      pk:true, notes:'Auto-increment primary key' },
+      { name:'order_id',          type:'INT',      fk:true, notes:'FK → customer_orders.order_id' },
+      { name:'vendor_id',         type:'INT',      fk:true, notes:'FK → vendors.vendor_id' },
+      { name:'product_id',        type:'INT',      fk:true, notes:'FK → products.product_id' },
+      { name:'inventory_id',      type:'INT',      fk:true, notes:'FK → inventories.inventory_id' },
+      { name:'quantity',          type:'INT',      nn:true, notes:'Units purchased' },
+      { name:'price_at_purchase', type:'DECIMAL',  nn:true, notes:'Price snapshot at checkout time' },
+    ],
+    relations: [
+      { type:'belongs to', col:'order_id',     target:'customer_orders', targetCol:'order_id',     desc:'Parent customer order' },
+      { type:'belongs to', col:'vendor_id',    target:'vendors',         targetCol:'vendor_id',    desc:'Vendor who supplied the item' },
+      { type:'belongs to', col:'product_id',   target:'products',        targetCol:'product_id',   desc:'Product that was purchased' },
+      { type:'belongs to', col:'inventory_id', target:'inventories',     targetCol:'inventory_id', desc:'Specific inventory entry — locks price at purchase' },
+    ]
+  },
+
+  service_records: {
+    name: 'service_records',
+    icon: '🎫',
+    owner: 'dtechcommonserver',
+    desc: 'Vendor support tickets. Ticket numbers are prefixed strings (e.g. SR-00001).',
+    columns: [
+      { name:'ticket_number', type:'VARCHAR',  pk:true, notes:'e.g. SR-00001 — string PK' },
+      { name:'vendor_id',     type:'INT',      fk:true, notes:'FK → vendors.vendor_id' },
+      { name:'created_at',    type:'DATETIME',          notes:'Ticket creation time' },
+      { name:'resolved_at',   type:'DATETIME',          notes:'Resolution time (nullable)' },
+      { name:'status',        type:'ENUM',              enumVals:['open','in_progress','resolved','closed'], notes:'Ticket lifecycle' },
+      { name:'agent_id',      type:'INT',               notes:'Admin user handling the ticket' },
+      { name:'remarks',       type:'TEXT',              notes:'Agent notes' },
+    ],
+    relations: [
+      { type:'belongs to',    col:'vendor_id',     target:'vendors',         targetCol:'vendor_id',     desc:'Vendor who raised the ticket' },
+      { type:'referenced by', col:'ticket_number', target:'sr_attachments',  targetCol:'ticket_number', desc:'Attachments on this ticket' },
+    ]
+  },
+
+  sr_attachments: {
+    name: 'sr_attachments',
+    icon: '📎',
+    owner: 'dtechcommonserver',
+    desc: 'File attachments on vendor support tickets.',
+    columns: [
+      { name:'attachment_id',  type:'INT',      pk:true, notes:'Auto-increment primary key' },
+      { name:'ticket_number',  type:'VARCHAR',  fk:true, notes:'FK → service_records.ticket_number' },
+      { name:'file_url',       type:'VARCHAR',  nn:true, notes:'File path or URL' },
+    ],
+    relations: [
+      { type:'belongs to', col:'ticket_number', target:'service_records', targetCol:'ticket_number', desc:'Parent support ticket' },
+    ]
+  },
+
+  driver_support_tickets: {
+    name: 'driver_support_tickets',
+    icon: '🚗',
+    owner: 'dtechcommonserver',
+    desc: 'Support tickets raised by drivers.',
+    columns: [
+      { name:'ticket_number', type:'VARCHAR',  pk:true, notes:'String PK — format TKT-xxxxx' },
+      { name:'driver_id',     type:'INT',      fk:true, notes:'FK → drivers.driver_id' },
+      { name:'subject',       type:'VARCHAR',  nn:true, notes:'Ticket subject line' },
+      { name:'description',   type:'TEXT',              notes:'Full issue description' },
+      { name:'status',        type:'ENUM',              enumVals:['open','in_progress','resolved','closed'], notes:'Ticket lifecycle' },
+      { name:'created_at',    type:'DATETIME',          notes:'Ticket creation time' },
+    ],
+    relations: [
+      { type:'referenced by', col:'ticket_number', target:'driver_ticket_attachments', targetCol:'ticket_number', desc:'Attachments on this ticket' },
+    ]
+  },
+
+  driver_ticket_attachments: {
+    name: 'driver_ticket_attachments',
+    icon: '📎',
+    owner: 'dtechcommonserver',
+    desc: 'File attachments on driver support tickets.',
+    columns: [
+      { name:'attachment_id',  type:'INT',      pk:true, notes:'Auto-increment primary key' },
+      { name:'ticket_number',  type:'VARCHAR',  fk:true, notes:'FK → driver_support_tickets.ticket_number' },
+      { name:'file_url',       type:'VARCHAR',  nn:true, notes:'File path or URL' },
+    ],
+    relations: [
+      { type:'belongs to', col:'ticket_number', target:'driver_support_tickets', targetCol:'ticket_number', desc:'Parent driver ticket' },
+    ]
+  }
+
+};
+
+/* ── Filter ── */
+function filterGroup(group, btn) {
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+
+  document.querySelectorAll('.er-group').forEach(g => {
+    if (group === 'all') {
+      g.classList.remove('hidden');
+    } else {
+      const gAttr = g.getAttribute('data-group');
+      g.classList.toggle('hidden', gAttr !== group);
+    }
+  });
+}
+
+/* ── Select table ── */
+function selectTable(name) {
+  const tbl = TABLES[name];
+  if (!tbl) return;
+
+  // sidebar
+  document.querySelectorAll('.sidebar-item').forEach(el => el.classList.remove('active'));
+  const sItem = document.querySelector(`.sidebar-item[data-table="${name}"]`);
+  if (sItem) sItem.classList.add('active');
+
+  // cards
+  document.querySelectorAll('.tbl-card').forEach(el => el.classList.remove('active'));
+  const card = document.getElementById('card-' + name);
+  if (card) card.classList.add('active');
+
+  // panel header
+  document.getElementById('panel-icon').textContent = tbl.icon;
+  document.getElementById('panel-name').textContent = tbl.name;
+  document.getElementById('panel-sub').textContent  = tbl.owner + ' · ' + tbl.columns.length + ' columns';
+
+  // stats
+  const pkCount  = tbl.columns.filter(c => c.pk).length;
+  const fkCount  = tbl.columns.filter(c => c.fk).length;
+  const relCount = tbl.relations ? tbl.relations.length : 0;
+
+  let html = `
+    <div class="stats-strip">
+      <div class="stat-cell"><div class="stat-val">${tbl.columns.length}</div><div class="stat-lbl">Columns</div></div>
+      <div class="stat-cell"><div class="stat-val">${fkCount}</div><div class="stat-lbl">Foreign Keys</div></div>
+      <div class="stat-cell"><div class="stat-val">${relCount}</div><div class="stat-lbl">Relationships</div></div>
+    </div>
+    <div class="panel-section">
+      <div class="ps-title">Description</div>
+      <div style="font-size:13px;color:var(--text-muted);line-height:1.6">${tbl.desc}</div>
+    </div>`;
+
+  // column table
+  html += `<table class="col-table">
+    <thead><tr>
+      <th style="width:36%">Column</th>
+      <th style="width:20%">Type</th>
+      <th>Notes</th>
+    </tr></thead>
+    <tbody>`;
+
+  tbl.columns.forEach(col => {
+    const rowClass = col.pk ? 'pk-row' : col.fk ? 'fk-row' : '';
+    html += `<tr class="${rowClass}">
+      <td><div class="col-name-cell">
+        ${col.pk ? '<span class="badge-pk">PK</span>' : ''}
+        ${col.fk ? '<span class="badge-fk">FK</span>' : ''}
+        <span class="${col.pk ? 'tbl-col-name pk' : col.fk ? 'tbl-col-name fk' : 'tbl-col-name'}">${col.name}</span>
+      </div></td>
+      <td class="col-type-cell">${col.type}${col.nn ? '<br><span class="badge-nn" style="margin-top:3px;display:inline-block">NOT NULL</span>' : ''}</td>
+      <td class="col-notes-cell">${col.notes}${col.enumVals ? '<div class="enum-values">' + col.enumVals.map(v=>`<span class="enum-val">${v}</span>`).join('') + '</div>' : ''}</td>
+    </tr>`;
+  });
+  html += `</tbody></table>`;
+
+  // relationships
+  if (tbl.relations && tbl.relations.length) {
+    html += `<div class="panel-section"><div class="ps-title">Relationships</div><div class="rel-list">`;
+    tbl.relations.forEach(r => {
+      html += `<div class="rel-item">
+        <span class="rel-arrow">${r.type === 'belongs to' ? '↗' : '↙'}</span>
+        <div>
+          <div style="font-size:12px">
+            <span style="color:var(--text-muted)">${r.type}</span>
+            <span class="rel-target" onclick="selectTable('${r.target}')">${r.target}</span>
+            <span style="color:var(--text-muted)"> via <code>${r.col}</code></span>
+          </div>
+          <div class="rel-label" style="font-size:11px;margin-top:2px">${r.desc}</div>
+        </div>
+      </div>`;
+    });
+    html += `</div></div>`;
+  }
+
+  document.getElementById('panel-body').innerHTML = html;
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('canvas').classList.add('panel-open');
+
+  // scroll card into view
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('canvas').classList.remove('panel-open');
+  document.querySelectorAll('.tbl-card, .sidebar-item').forEach(el => el.classList.remove('active'));
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePanel(); });
+</script>
+</body>
+</html>
