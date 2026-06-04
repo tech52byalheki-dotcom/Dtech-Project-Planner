@@ -296,21 +296,31 @@ const ACOLORS=['#539bf5','#57ab5a','#e5534b','#b083f0','#c69026','#39c5cf','#f78
 let S={tasks:[],team:[]};
 let editId=null,dragId=null,selColor=ACOLORS[0];
 
-function save(){localStorage.setItem(SK,JSON.stringify(S))}
+function save(){
+  try{
+    localStorage.setItem(SK,JSON.stringify(S));
+  }catch(e){
+    toast('Could not save data: '+e.message,'error');
+  }
+}
 async function load(){
-  // Use localStorage first if it has data (preserves user edits across refreshes)
   try{
     const d=localStorage.getItem(SK);
-    if(d){S=JSON.parse(d);S.tasks=S.tasks||[];S.team=S.team||[];return}
-  }catch(e){}
+    if(d){
+      const parsed=JSON.parse(d);
+      S=parsed;S.tasks=S.tasks||[];S.team=S.team||[];
+      return;
+    }
+  }catch(e){
+    localStorage.removeItem(SK);
+  }
   // Seed from data.json on first visit only
   try{
     const res=await fetch('./data.json?_='+Date.now());
     if(res.ok){
       const d=await res.json();
       if(d.tasks&&d.team){
-        S=d;localStorage.setItem(SK,JSON.stringify(S));
-        S.tasks=S.tasks||[];S.team=S.team||[];return;
+        S=d;S.tasks=S.tasks||[];S.team=S.team||[];save();return;
       }
     }
   }catch(e){}
@@ -608,19 +618,23 @@ document.addEventListener('keydown',e=>{
 // INIT
 (async()=>{
 await load();
-if(!S.tasks.length&&!S.team.length){
-  S.team=[
-    {id:'t1',name:'Jay Debnath',role:'Tech Lead',color:'#539bf5',initials:'JD'},
-    {id:'t2',name:'Team Member',role:'Developer',color:'#57ab5a',initials:'TM'}
-  ];
-  S.tasks=[
-    {id:'s1',title:'Redesign dashboard layout',description:'Update admin panel with new design system',project:'frontend',status:'inprogress',priority:'high',dueDate:'2026-06-10',assignee:'t1',isClientRequest:false,createdAt:new Date().toISOString()},
-    {id:'s2',title:'Auth API migration',description:'Move from JWT to session-based auth',project:'backend',status:'backlog',priority:'critical',dueDate:'2026-06-15',assignee:'t2',isClientRequest:false,createdAt:new Date().toISOString()},
-    {id:'s3',title:'Fix push notifications on Android 13',description:'Notifications not showing on Android 13+ devices',project:'mobile',status:'review',priority:'high',dueDate:'2026-06-08',assignee:'t1',isClientRequest:false,createdAt:new Date().toISOString()},
-    {id:'s4',title:'Add dark mode support',description:'System-aware dark mode across the mobile app',project:'mobile',status:'backlog',priority:'medium',dueDate:'',assignee:'',isClientRequest:false,createdAt:new Date().toISOString()},
-    {id:'s5',title:'Database connection pooling',description:'Optimise pool size for common server under load',project:'backend',status:'done',priority:'medium',dueDate:'2026-06-01',assignee:'t2',isClientRequest:false,createdAt:new Date().toISOString()}
-  ];
-  save();
+const seeded=localStorage.getItem(SK+'_init');
+if(!seeded){
+  if(!S.tasks.length&&!S.team.length){
+    S.team=[
+      {id:'t1',name:'Jay Debnath',role:'Tech Lead',color:'#539bf5',initials:'JD'},
+      {id:'t2',name:'Team Member',role:'Developer',color:'#57ab5a',initials:'TM'}
+    ];
+    S.tasks=[
+      {id:'s1',title:'Redesign dashboard layout',description:'Update admin panel with new design system',project:'frontend',status:'inprogress',priority:'high',dueDate:'2026-06-10',assignee:'t1',isClientRequest:false,createdAt:new Date().toISOString()},
+      {id:'s2',title:'Auth API migration',description:'Move from JWT to session-based auth',project:'backend',status:'backlog',priority:'critical',dueDate:'2026-06-15',assignee:'t2',isClientRequest:false,createdAt:new Date().toISOString()},
+      {id:'s3',title:'Fix push notifications on Android 13',description:'Notifications not showing on Android 13+ devices',project:'mobile',status:'review',priority:'high',dueDate:'2026-06-08',assignee:'t1',isClientRequest:false,createdAt:new Date().toISOString()},
+      {id:'s4',title:'Add dark mode support',description:'System-aware dark mode across the mobile app',project:'mobile',status:'backlog',priority:'medium',dueDate:'',assignee:'',isClientRequest:false,createdAt:new Date().toISOString()},
+      {id:'s5',title:'Database connection pooling',description:'Optimise pool size for common server under load',project:'backend',status:'done',priority:'medium',dueDate:'2026-06-01',assignee:'t2',isClientRequest:false,createdAt:new Date().toISOString()}
+    ];
+    save();
+  }
+  try{localStorage.setItem(SK+'_init','1')}catch(e){}
 }
 render();
 })();
